@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="ProportionKitchen — Aiuto Cuoco: ridimensiona le tue ricette con logica geometrica, fisico-chimica e termodinamica. Non solo proporzioni lineari." />
+<meta name="theme-color" content="#FAFAFA" />
+<title>Aiuto Cuoco · ProportionKitchen — Ridimensiona Ricette</title>
+
+<!-- ============================================================
+     MODULO 1 — DESIGN SYSTEM: PALETTE & TIPOGRAFIA
+     Palette esatta (HEX + variabili CSS) come da specifica:
+     --bg #FAFAFA | --surface #FFFFFF | --primary #E65F2B
+     --secondary #2C5E43 | --text #1E1E24 | --error #D9383A
+     --success #3A8E62 | Hands-Free dark #0B0F19
+     ============================================================ -->
+<style>
+  :root {
+    --bg: #FAFAFA;            /* Gesso pulito: previene riflessi su display lucidi */
+    --surface: #FFFFFF;       /* Background elementi */
+    --primary: #E65F2B;       /* Arancio Zafferano — brand/action */
+    --secondary: #2C5E43;     /* Verde Salvia scuro — highlight/attrezzi */
+    --text: #1E1E24;          /* Nero Lavagna antiriflesso ad alto contrasto */
+    --error: #D9383A;         /* Rosso Pomodoro — errore/allerta */
+    --success: #3A8E62;       /* Verde Basilico — successo/conferma */
+    --hands: #0B0F19;         /* Dark Mode Avanzata Hands-Free */
+    --ring: 0 0 0 3px rgba(230, 95, 43, 0.25);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Numeri / grammature: monospazio per allineare le colonne dei pesi */
+  .font-num { font-family: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  /* Focus visibile WCAG 2.1 AA */
+  :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+
+  .card { background: var(--surface); border: 1px solid #ECE7E2; box-shadow: 0 1px 2px rgba(30,30,36,.04), 0 8px 24px -18px rgba(30,30,36,.18); }
+
+  .input {
+    width: 100%; background: var(--surface); border: 1.5px solid #E4DDD6; color: var(--text);
+    border-radius: 10px; padding: .55rem .7rem; font-size: .875rem; transition: border-color .15s, box-shadow .15s;
+  }
+  .input:focus { border-color: var(--primary); box-shadow: var(--ring); outline: none; }
+
+  .label { display: block; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #6E6A63; margin-bottom: .3rem; }
+
+  .chip { display: inline-flex; align-items: center; gap: .35rem; font-size: .72rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; }
+
+  .btn-primary {
+    background: var(--primary); color: #fff; font-weight: 700; border-radius: 12px;
+    padding: .7rem 1.1rem; transition: transform .08s, filter .15s; border: none; cursor: pointer;
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-primary:active { transform: scale(.97); }
+
+  .btn-ghost { background: transparent; border: 1.5px solid #E4DDD6; color: var(--text); border-radius: 12px; padding: .7rem 1.1rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .btn-ghost:hover { background: #F4F1ED; }
+
+  /* Pulsante gigante Hands-Free (min 64x64) */
+  .btn-hands {
+    width: 64px; height: 64px; min-width: 64px; min-height: 64px; border-radius: 18px;
+    background: var(--hands); color: var(--primary); display: inline-flex; align-items: center; justify-content: center;
+    border: none; cursor: pointer; box-shadow: 0 10px 24px -12px rgba(11,15,25,.6); transition: transform .1s, filter .15s;
+  }
+  .btn-hands:hover { filter: brightness(1.25); }
+  .btn-hands:active { transform: scale(.94); }
+
+  /* Barra di avanzamento preparazione (Hands-Free) */
+  .progress-track { position: fixed; inset-inline: 0; top: 0; height: 6px; background: rgba(255,255,255,.08); z-index: 60; }
+  .progress-fill { height: 100%; width: 0%; background: var(--success); transition: width .35s ease; }
+
+  /* Output row */
+  .ing-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: baseline; padding: .65rem .1rem; border-bottom: 1px dashed #ECE7E2; }
+  .ing-row:last-child { border-bottom: none; }
+
+  /* Numeri giganti Hands-Free leggibili a 1.5m */
+  .hf-number { font-size: 42pt; line-height: 1.1; color: var(--primary); font-weight: 700; }
+  @media (max-width: 640px) { .hf-number { font-size: 34pt; } }
+
+  .segment { background: #FFF7F2; border: 1px solid #FBE3D8; border-radius: 12px; padding: .9rem; }
+  .segment-title { font-size: .8rem; font-weight: 700; color: var(--primary); letter-spacing: .03em; text-transform: uppercase; display: flex; align-items: center; gap: .4rem; }
+
+  .slider-row { display: flex; gap: .75rem; }
+  .slider-row > div { flex: 1; }
+
+  /* Toggle shape */
+  .shape-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+  .shape-toggle button { border: 1.5px solid #E4DDD6; border-radius: 10px; padding: .5rem; font-weight: 600; font-size: .8rem; cursor: pointer; background: var(--surface); color: #6E6A63; transition: all .12s; }
+  .shape-toggle button.active { border-color: var(--secondary); background: var(--secondary); color: #fff; }
+
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] .chev { transform: rotate(90deg); }
+  .chev { transition: transform .15s; display: inline-block; }
+
+  ::selection { background: rgba(230,95,43,.25); }
+</style>
+
+<!-- Tailwind CSS via CDN + Google Fonts (Inter / JetBrains Mono) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: { primary: '#E65F2B', secondary: '#2C5E43', success: '#3A8E62', error: '#D9383A', chalk: '#FAFAFA', ink: '#1E1E24', hands: '#0B0F19' } } }
+  };
+</script>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ==================== HEADER ==================== -->
+<header class="sticky top-0 z-40 backdrop-blur bg-chalk/85 border-b border-[#ECE7E2]">
+  <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-secondary text-white flex items-center justify-center shrink-0" aria-hidden="true">
+      <!-- Icona Chef Hat -->
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 3c2.6 0 4.6 2.1 4.6 4.7 0 .3 0 .6-.1.9 2.1.6 3.7 2.5 3.7 4.7 0 1.8-1.3 3.1-3 3.1H6.8c-1.7 0-3-1.3-3-3.1 0-2.2 1.6-4.1 3.7-4.7A4.7 4.7 0 0 1 12 3zM6 17.5h12v1.8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1.8z"/></svg>
+    </div>
+    <div class="min-w-0">
+      <h1 class="text-lg font-extrabold leading-tight tracking-tight truncate">Aiuto Cuoco <span class="text-primary">·</span> <span class="text-sm font-semibold text-[#6E6A63] hidden sm:inline">ProportionKitchen</span></h1>
+      <p class="text-[11px] text-[#6E6A63] truncate">Scalabilità non lineare di ricette · Fisica dei fluidi · Termodinamica di cottura</p>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <span id="liveBadge" class="chip bg-success/10 text-success hidden sm:inline-flex"><span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span> Calcolo in tempo reale</span>
+      <button id="handsBtn" class="btn-hands" title="Modalità Mani Sporche (Hands-Free)" aria-label="Attiva modalità Mani Sporche">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 3c2.6 0 4.6 2.1 4.6 4.7 0 .3 0 .6-.1.9 2.1.6 3.7 2.5 3.7 4.7 0 1.8-1.3 3.1-3 3.1H6.8c-1.7 0-3-1.3-3-3.1 0-2.2 1.6-4.1 3.7-4.7A4.7 4.7 0 0 1 12 3zM6 17.5h12v1.8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1.8z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== MAIN 3 COLONNE ==================== -->
+<main class="max-w-[1400px] mx-auto px-4 py-5 grid gap-5 lg:grid-cols-3 items-start">
+
+  <!-- ============ COLONNA 1 — INPUT RICETTA ORIGINALE ============ -->
+  <section class="card rounded-2xl p-4 space-y-4" aria-label="Ricetta originale">
+    <div class="segment-title">1 · Ricetta originale</div>
+
+    <div>
+      <label class="label" for="recipeText">Ingredienti (uno per riga)</label>
+      <textarea id="recipeText" rows="11" class="input font-num resize-y text-[13px] leading-relaxed" spellcheck="false" placeholder="200g di farina 00&#10;100g di zucchero&#10;3 uova&#10;80g di burro&#10;120ml di latte&#10;1 bustina di lievito chimico&#10;1/2 cucchiaino di noce moscata&#10;1 pizzico di sale">200g di farina 00
+100g di zucchero
+3 uova
+80g di burro
+120ml di latte
+1 bustina di lievito chimico
+1/2 cucchiaino di noce moscata
+1 pizzico di sale</textarea>
+      <p class="text-[11px] text-[#6E6A63] mt-1">Formati supportati: <span class="font-num">1/2 tazza · 1,5 kg · 2 1/2 cucchiai · un pizzico · 3 uova</span></p>
+    </div>
+
+    <fieldset class="segment">
+      <legend class="sr-only">Teglia di partenza</legend>
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[13px] font-bold">Teglia di partenza</span>
+        <span class="chip bg-secondary/10 text-secondary">Originale</span>
+      </div>
+      <div class="shape-toggle mb-3" role="tablist" aria-label="Forma teglia originale">
+        <button data-pan="orig" data-shape="round" class="active" role="tab" aria-selected="true" type="button">⭘ Tonda</button>
+        <button data-pan="orig" data-shape="rect" role="tab" aria-selected="false" type="button">▭ Rettangolare</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pan-dims" data-pan="orig" data-shape="round">
+        <div><label class="label" for="origD">Diametro (cm)</label><input id="origD" class="input font-num" type="number" step="0.5" min="1" value="22" /></div>
+        <div><label class="label" for="origH">Altezza h (cm)</label><input id="origH" class="input font-num" type="number" step="0.5" min="1" value="5" placeholder="default 5" /></div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 pan-dims hidden" data-pan="orig" data-shape="rect">
+        <div><label class="label" for="origL">Lunghezza (cm)</label><input id="origL" class="input font-num" type="number" step="0.5" min="1" value="28" /></div>
+        <div><label class="label" for="origW">Larghezza (cm)</label><input id="origW" class="input font-num" type="number" step="0.5" min="1" value="20" /></div>
+        <div><label class="label" for="origH2">Altezza h (cm)</label><input id="origH2" class="input font-num" type="number" step="0.5" min="1" value="5" placeholder="default 5" /></div>
+      </div>
+      <div class="text-[11px] text-[#6E6A63] mt-2 font-num" id="origVolLabel">V₀ = π·(11)²·5 = 1.900,6 cm³</div>
+    </fieldset>
+  </section>
+
+  <!-- ============ COLONNA 2 — CONFIGURATORE GEOMETRICO/PORZIONI ============ -->
+  <section class="card rounded-2xl p-4 space-y-4" aria-label="Configuratore">
+    <div class="segment-title">2 · Configuratore</div>
+
+    <fieldset class="segment">
+      <legend class="sr-only">Teglia di arrivo</legend>
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[13px] font-bold">Teglia di arrivo</span>
+        <span class="chip bg-primary/10 text-primary">Target</span>
+      </div>
+      <div class="shape-toggle mb-3" role="tablist" aria-label="Forma teglia target">
+        <button data-pan="target" data-shape="round" class="active" role="tab" aria-selected="true" type="button">⭘ Tonda</button>
+        <button data-pan="target" data-shape="rect" role="tab" aria-selected="false" type="button">▭ Rettangolare</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pan-dims" data-pan="target" data-shape="round">
+        <div><label class="label" for="tgtD">Diametro (cm)</label><input id="tgtD" class="input font-num" type="number" step="0.5" min="1" value="26" /></div>
+        <div><label class="label" for="tgtH">Altezza h (cm)</label><input id="tgtH" class="input font-num" type="number" step="0.5" min="1" value="5" placeholder="default 5" /></div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 pan-dims hidden" data-pan="target" data-shape="rect">
+        <div><label class="label" for="tgtL">Lunghezza (cm)</label><input id="tgtL" class="input font-num" type="number" step="0.5" min="1" value="30" /></div>
+        <div><label class="label" for="tgtW">Larghezza (cm)</label><input id="tgtW" class="input font-num" type="number" step="0.5" min="1" value="20" /></div>
+        <div><label class="label" for="tgtH2">Altezza h (cm)</label><input id="tgtH2" class="input font-num" type="number" step="0.5" min="1" value="7" placeholder="default 5" /></div>
+      </div>
+      <div class="text-[11px] text-[#6E6A63] mt-2 font-num" id="tgtVolLabel">V₁ = 30·20·7 = 4.200,0 cm³</div>
+    </fieldset>
+
+    <div class="segment">
+      <div class="text-[13px] font-bold mb-2">Porzioni</div>
+      <div class="slider-row">
+        <div><label class="label" for="servOrig">Originali</label><input id="servOrig" class="input font-num" type="number" step="1" min="1" value="4" /></div>
+        <div><label class="label" for="servTgt">Desiderate</label><input id="servTgt" class="input font-num" type="number" step="1" min="1" value="6" /></div>
+      </div>
+      <p class="text-[11px] text-[#6E6A63] mt-1">Fattore porzioni = <span class="font-num font-bold text-secondary" id="servFactorLabel">1,50×</span></p>
+    </div>
+
+    <div class="segment">
+      <div class="text-[13px] font-bold mb-1">Modalità Dispensa Limitata</div>
+      <p class="text-[11px] text-[#6E6A63] mb-2">Blocca un ingrediente: mantiene la quantità originale (usa ciò che hai).</p>
+      <div class="flex gap-2">
+        <input id="lockInput" class="input font-num" type="text" placeholder="es. latte" list="ingrList" />
+        <datalist id="ingrList"></datalist>
+        <button id="lockAdd" class="btn-ghost shrink-0 px-3" type="button">🔒 Blocca</button>
+      </div>
+      <div id="lockChips" class="flex flex-wrap gap-2 mt-2"></div>
+    </div>
+
+    <details class="segment">
+      <summary class="text-[13px] font-bold flex items-center gap-2"><span class="chev">▶</span> Cottura originale (per stima termodinamica)</summary>
+      <div class="slider-row mt-3">
+        <div><label class="label" for="bakeTime">Tempo (min)</label><input id="bakeTime" class="input font-num" type="number" step="5" min="1" value="40" /></div>
+        <div><label class="label" for="bakeTemp">Temperatura (°C)</label><input id="bakeTemp" class="input font-num" type="number" step="5" min="50" value="180" /></div>
+      </div>
+    </details>
+
+    <button id="handsBtn2" class="btn-primary w-full flex items-center justify-center gap-2" type="button">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 3c2.6 0 4.6 2.1 4.6 4.7 0 .3 0 .6-.1.9 2.1.6 3.7 2.5 3.7 4.7 0 1.8-1.3 3.1-3 3.1H6.8c-1.7 0-3-1.3-3-3.1 0-2.2 1.6-4.1 3.7-4.7A4.7 4.7 0 0 1 12 3zM6 17.5h12v1.8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1.8z"/></svg>
+      Modalità Mani Sporche
+    </button>
+  </section>
+
+  <!-- ============ COLONNA 3 — OUTPUT INTERATTIVO ============ -->
+  <section class="card rounded-2xl p-4 space-y-4 lg:sticky lg:top-20" aria-label="Output ricalcolato">
+    <div class="flex items-center justify-between">
+      <div class="segment-title">3 · Output ricalcolato</div>
+      <div id="factorBadge" class="chip bg-primary/10 text-primary font-num font-bold">F = 1,00×</div>
+    </div>
+
+    <!-- Riepilogo fattore -->
+    <div class="segment bg-[#F6FBF8] border-[#DCEBE2]">
+      <div class="grid grid-cols-2 gap-2 text-center">
+        <div>
+          <div class="text-[11px] text-[#6E6A63] uppercase font-semibold tracking-wide">Fattore geometrico</div>
+          <div class="font-num font-extrabold text-2xl text-secondary" id="geoFactorLabel">1,00×</div>
+          <div class="text-[10px] text-[#6E6A63] font-num" id="geoDetail">V₁/V₀</div>
+        </div>
+        <div>
+          <div class="text-[11px] text-[#6E6A63] uppercase font-semibold tracking-wide">Fattore combinato</div>
+          <div class="font-num font-extrabold text-2xl text-primary" id="comboFactorLabel">1,50×</div>
+          <div class="text-[10px] text-[#6E6A63] font-num">geo × porzioni</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista ingredienti -->
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[13px] font-bold">Ingredienti scalati</span>
+        <span class="text-[11px] text-[#6E6A63] font-num" id="ingCount"></span>
+      </div>
+      <div id="ingList" class="divide-y divide-dashed divide-[#ECE7E2]"></div>
+    </div>
+
+    <!-- Note critiche -->
+    <div id="notesBox" class="space-y-2"></div>
+
+    <!-- Cottura stimata -->
+    <div class="segment" id="bakeBox">
+      <div class="segment-title mb-2">🍳 Stima cottura (termodinamica)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-xl border border-[#ECE7E2] p-3">
+          <div class="text-[11px] text-[#6E6A63] uppercase font-semibold">Tempo</div>
+          <div class="font-num font-extrabold text-2xl text-ink" id="bakeTimeOut">40 min</div>
+        </div>
+        <div class="bg-white rounded-xl border border-[#ECE7E2] p-3">
+          <div class="text-[11px] text-[#6E6A63] uppercase font-semibold">Forno</div>
+          <div class="font-num font-extrabold text-2xl text-ink" id="bakeTempOut">180 °C</div>
+        </div>
+      </div>
+      <p class="text-[11px] text-[#6E6A63] mt-2" id="bakeNote"></p>
+    </div>
+  </section>
+</main>
+
+<!-- ==================== HANDS-FREE OVERLAY (MODULO 1 §3) ==================== -->
+<div id="handsOverlay" class="fixed inset-0 bg-hands z-50 hidden flex-col" role="dialog" aria-modal="true" aria-label="Modalità Mani Sporche">
+  <div class="progress-track" aria-hidden="true"><div id="hfProgress" class="progress-fill"></div></div>
+
+  <div class="flex items-center justify-between p-4">
+    <span class="chip bg-white/10 text-white font-num" id="hfCounter">1 / 10</span>
+    <button id="hfClose" class="btn-hands !bg-white/10 !text-white" aria-label="Esci dalla modalità Mani Sporche">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 select-none">
+    <div class="text-white/60 text-sm uppercase tracking-[.2em] font-semibold" id="hfStepLabel">Ingrediente</div>
+    <div class="hf-number font-num" id="hfValue">200 g</div>
+    <div class="text-white text-xl font-semibold max-w-md" id="hfName">farina 00</div>
+    <div class="text-white/40 text-sm max-w-sm" id="hfNote"></div>
+  </div>
+
+  <div class="p-4 pb-8 grid grid-cols-2 gap-3 max-w-lg mx-auto w-full">
+    <button id="hfPrev" class="btn-ghost !border-white/20 !text-white py-5 text-lg" type="button">← Precedente</button>
+    <button id="hfNext" class="btn-primary py-5 text-lg" type="button">Avanti →</button>
+  </div>
+</div>
+
+<footer class="max-w-[1400px] mx-auto px-4 py-6 text-center text-[11px] text-[#6E6A63]">
+  ProportionKitchen · Aiuto Cuoco — scalabilità non lineare: agenti lievitanti (F^0.75), spezie (1+ln F), idratazione (−0,5%/F&gt;3), split uova a precisione industriale.
+</footer>
+
+<script>
+/* ============================================================================
+   MODULO 2 & 3 — MOTORE DI CALCOLO + EXTRACTION LOGIC (JavaScript nativo)
+   ============================================================================ */
+(() => {
+  'use strict';
+
+  /* ---------- 3.1 REGEX ENGINE / NLU ---------- */
+  const FRAC_UNI = { '½':0.5, '⅓':1/3, '⅔':2/3, '¼':0.25, '¾':0.75, '⅛':0.125, '⅜':0.375, '⅝':0.625, '⅞':0.875 };
+
+  // Sinonimi unità -> unità canonica di visualizzazione
+  const UNIT_MAP = {
+    'g':'g','gr':'g','grammo':'g','grammi':'g','gramm':'g',
+    'kg':'kg','chilo':'kg','chili':'kg','chilogrammo':'kg','chilogrammi':'kg',
+    'ml':'ml','millilitro':'ml','millilitri':'ml','cl':'cl','centilitri':'cl','dl':'dl','decilitri':'dl',
+    'l':'l','litro':'l','litri':'l',
+    'tazza':'tazza','tazze':'tazza','tazzina':'tazzina','tazzine':'tazzina',
+    'cucchiaino':'cucchiaino','cucchiaini':'cucchiaino','cc':'cucchiaino','cucch.' : 'cucchiaio',
+    'cucchiaio':'cucchiaio','cucchiai':'cucchiaio',
+    'pizzico':'pizzico','pizzichi':'pizzico',
+    'uovo':'uova','uova':'uova','uove':'uova',
+    'albume':'albume','albumi':'albume','tuorlo':'tuorlo','tuorli':'tuorlo',
+    'spicchio':'spicchio','spicchi':'spicchio',
+    'bustina':'bustina','bustine':'bustina','sacchetto':'bustina','sacchetti':'bustina',
+    'scatola':'scatola','scatole':'scatola','foglia':'foglia','foglie':'foglia',
+    'rametto':'rametto','rametti':'rametto','manciata':'manciata','manciate':'manciata',
+    'noce':'noce','noci':'noce','pezzo':'pezzo','pezzi':'pezzo','fetta':'fetta','fette':'fetta'
+  };
+
+  // Regex per riconoscere l'unità di misura all'inizio del resto della riga
+  const UNIT_RE = new RegExp('^(?:' + Object.keys(UNIT_MAP).sort((a,b)=>b.length-a.length).map(escapeRe).join('|') + ')\\b');
+
+  function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  /**
+   * parseIngredientLine — estrae {amount, unit, name} da una riga di ricetta.
+   * Gestisce: frazioni semplici (1/2), miste (2 1/2), decimali (1,5 / 1.5),
+   * unicode (¾), numeri in parole (un, mezzo), quantità senza unità (3 uova),
+   * e la preposizione "di" ("un pizzico di ...").
+   */
+  function parseIngredientLine(rawLine) {
+    let line = rawLine.trim().replace(/,/g, '.').replace(/[½⅓⅔¼¾⅛⅜⅝⅞]/g, ch => FRAC_UNI[ch]);
+    if (!line) return null;
+
+    let amount = 1;
+    let rest = line;
+    const fraction = { start: 0 };
+
+    // 1) Frazione mista: "2 1/2"
+    let m = rest.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)/);
+    if (m) { amount = parseInt(m[1]) + parseInt(m[2]) / parseInt(m[3]); rest = rest.slice(m[0].length); }
+    else {
+      // 2) Frazione semplice: "1/2" (senza numero intero)
+      m = rest.match(/^(\d+)\s*\/\s*(\d+)/);
+      if (m) { amount = parseInt(m[1]) / parseInt(m[2]); rest = rest.slice(m[0].length); }
+      else {
+        // 3) Decimale: "1,5" / "1.5"
+        m = rest.match(/^(\d+(?:\.\d+)?)/);
+        if (m) { amount = parseFloat(m[1]); rest = rest.slice(m[0].length); }
+        else {
+          // 4) Numeri in parole: "un", "uno", "una", "mezzo/mezza", "due"
+          m = rest.match(/^(un|uno|una|mezzo|mezza|due|tre)\b/i);
+          if (m) {
+            amount = /^mezz/i.test(m[1]) ? 0.5 : (m[1].toLowerCase() === 'due' ? 2 : (m[1].toLowerCase() === 'tre' ? 3 : 1));
+            rest = rest.slice(m[0].length);
+          }
+        }
+      }
+    }
+
+    // Rimuovi preposizioni e punteggiatura iniziale ("di", "d'", "a")
+    rest = rest.replace(/^[\s,'’]+/, '').replace(/^(di|d'|de|a|da)\s+/i, '').trim();
+
+    // 5) Riconoscimento unità di misura
+    let unit = null;
+    m = rest.match(UNIT_RE);
+    if (m) { unit = UNIT_MAP[m[0].toLowerCase()]; rest = rest.slice(m[0].length).replace(/^[\s,'’]+/, '').trim(); }
+    else { unit = 'pezzi'; }
+
+    // Normalizza spazi (per "farina  00")
+    rest = rest.replace(/\s+/g, ' ').trim();
+    return { amount, unit, name: rest || unit };
+  }
+
+  /* ---------- 2.1 GEOMETRIA DEI CONTENITORI ---------- */
+  const H_DEFAULT = 5; // cm, se h non specificata
+
+  /** volumeOfPan — cilindro: π·(d/2)²·h | parallelepipedo: l·w·h */
+  function volumeOfPan(shape, dims) {
+    const h = (dims.h && dims.h > 0) ? dims.h : H_DEFAULT;
+    if (shape === 'round') { const r = dims.d / 2; return Math.PI * r * r * h; }
+    return dims.l * dims.w * h; // rect
+  }
+
+  /** areaOfPan — per stimare lo spessore effettivo (V/A) quando serve */
+  function areaOfPan(shape, dims) {
+    if (shape === 'round') { const r = dims.d / 2; return Math.PI * r * r; }
+    return dims.l * dims.w;
+  }
+
+  /** effectiveThickness — spessore del cibo: usa h dichiarata, altrimenti V/A */
+  function effectiveThickness(shape, dims) {
+    if (dims.h && dims.h > 0) return dims.h;
+    return volumeOfPan(shape, dims) / areaOfPan(shape, dims);
+  }
+
+  /* ---------- CATEGORIE DI NON-SCALABILITÀ (2.3) ---------- */
+  const NON_SCALABLE = {
+    leavening: {
+      match: ['lievito','bicarbonato','soda','tartaro','ammoniaca','cream'],
+      desc: 'Agente lievitante',
+      tip: 'saturazione: oltre F=2 si applica la curva attenuata F^0.75'
+    },
+    spice: {
+      match: ['peperoncino','noce moscata','pepe','cayenna','zenzero','curcuma','chiodi','cardamomo','pimento','paprika'],
+      desc: 'Spezia forte',
+      tip: 'curva logaritmica 1+ln(F): evita la saturazione del sapore'
+    },
+    hydration: {
+      match: ['acqua','latte','brodo','panna','vino','birra','siero'],
+      desc: 'Liquido di idratazione',
+      tip: '−0,5% cumulativo per ogni F>3 (minore evaporazione superficiale)'
+    }
+  };
+
+  function matchCategory(name, list) {
+    const n = name.toLowerCase();
+    return list.some(k => n.includes(k));
+  }
+
+  /** Se l'ingrediente è un uovo intero/albume/tuorlo → split a precisione industriale */
+  function isEggIngredient(ing) {
+    return ing.unit === 'uova' || ing.unit === 'albume' || ing.unit === 'tuorlo' || /uova?|albume|tuorlo/i.test(ing.name);
+  }
+  const EGG_GRAM = { uova: 50, albume: 30, tuorlo: 20 }; // uovo medio intero senza guscio
+
+  /**
+   * 2.2 EGG FRACTIONING — algoritmo di split:
+   *   frac ≤ 0.2  → arrotonda per difetto (elimina la frazione)
+   *   frac ≥ 0.8  → arrotonda per eccesso (+1 uovo intero)
+   *   0.3–0.7     → converte la frazione in grammi esatti + istruzione testuale
+   */
+  function scaleEggs(linearCount, eggType) {
+    const whole = Math.floor(linearCount);
+    const frac = linearCount - whole;
+    const gr = EGG_GRAM[eggType] || 50;
+    if (frac <= 0.2) return { value: whole, text: `${whole} ${eggType === 'uova' ? 'uova' : eggType}`, note: 'frazione ≤ 0.2 → arrotondata per difetto' };
+    if (frac >= 0.8) return { value: whole + 1, text: `${whole + 1} ${eggType === 'uova' ? 'uova' : eggType}`, note: 'frazione ≥ 0.8 → arrotondata per eccesso (+1)' };
+    const grams = Math.round(frac * gr);
+    const unitTxt = eggType === 'uova' ? 'uovo sbattuto' : eggType;
+    return { value: linearCount, text: `${whole} ${eggType === 'uova' ? 'uova intere' : eggType} + ${grams}g di ${unitTxt}`, note: `split industriale: frazione 0.${Math.round(frac*10)} → ${grams}g` };
+  }
+
+  /* ---------- FORMULE NON LINEARI (2.3) ---------- */
+  /** Agenti lievitanti: lineare fino a F=2, poi attenuazione F^0.75 */
+  function scaleLeavening(orig, F) {
+    if (F <= 2) return { q: orig * F, note: 'lineare (F≤2)' };
+    return { q: orig * Math.pow(F, 0.75), note: `attenuata F^0.75 (F=${F.toFixed(2)}) → ${(Math.pow(F,0.75)/F*100).toFixed(0)}% del valore lineare` };
+  }
+
+  /** Sale & spezie forti: curva logaritmica — impedisce saturazione del sapore */
+  function scaleSpice(orig, F) {
+    return { q: orig * (1 + Math.log(F)), note: `curva logaritmica 1+ln(F) → ${((1+Math.log(F))/F*100).toFixed(0)}% del valore lineare` };
+  }
+
+  /** Liquidi di idratazione: −0,5% cumulativo per ogni unità di F oltre 3 */
+  function scaleHydration(orig, F) {
+    let q = orig * F;
+    if (F > 3) {
+      const reduction = Math.pow(0.995, F - 3); // 0,5% cumulativo per F>3
+      q = q * reduction;
+      return { q, note: `idratazione ridotta del ${((1 - reduction) * 100).toFixed(1)}% (F=${F.toFixed(2)})` };
+    }
+    return { q, note: 'lineare (F≤3)' };
+  }
+
+  /* ---------- MOTORE PRINCIPALE DI RIDIMENSIONAMENTO ---------- */
+  function scaleIngredient(ing, F, locks) {
+    const locked = locks.some(l => ing.name.toLowerCase().includes(l.toLowerCase()));
+    if (locked) return { ...ing, scaled: ing.amount, factor: 1, locked: true, note: '🔒 Dispensa limitata: quantità originale invariata' };
+
+    if (isEggIngredient(ing)) {
+      const r = scaleEggs(ing.amount * F, ing.unit);
+      return { ...ing, scaled: r.value, eggText: r.text, factor: F, note: r.note };
+    }
+
+    if (matchCategory(ing.name, NON_SCALABLE.leavening.match)) {
+      const r = scaleLeavening(ing.amount, F);
+      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `${NON_SCALABLE.leavening.desc} — ${r.note}` };
+    }
+    if (matchCategory(ing.name, NON_SCALABLE.spice.match)) {
+      const r = scaleSpice(ing.amount, F);
+      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `${NON_SCALABLE.spice.desc} — ${r.note}` };
+    }
+    if (matchCategory(ing.name, NON_SCALABLE.hydration.match)) {
+      const r = scaleHydration(ing.amount, F);
+      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `${NON_SCALABLE.hydration.desc} — ${r.note}` };
+    }
+    return { ...ing, scaled: ing.amount * F, factor: F, note: null };
+  }
+
+  /* ---------- 5. THERMODYNAMIC BAKING ENGINE ---------- */
+  /**
+   * estimateBaking — stima variazioni di tempo e temperatura.
+   * Spessore maggiore:  +15% tempo per ogni cm extra, −10°C per cm.
+   * Spessore minore:    −20% tempo per ogni cm, +5°C per cm.
+   */
+  function estimateBaking(baseMin, baseC, thickOrig, thickTarget) {
+    const delta = thickTarget - thickOrig; // cm
+    if (delta > 0.1) {
+      const time = baseMin * (1 + 0.15 * delta);
+      const temp = baseC - 10 * delta;
+      return { time, temp, delta, note: `Impasto più spesso (+${delta.toFixed(1)} cm): tempo +${(0.15*delta*100).toFixed(0)}% e forno −${(10*delta).toFixed(0)}°C per non bruciare l'esterno lasciando l'interno crudo.` };
+    }
+    if (delta < -0.1) {
+      const m = -delta;
+      const time = Math.max(5, baseMin * (1 - 0.20 * m));
+      const temp = baseC + 5 * m;
+      return { time, temp, delta, note: `Impasto più sottile (−${m.toFixed(1)} cm): tempo −${(0.20*m*100).toFixed(0)}% e forno +${(5*m).toFixed(0)}°C.` };
+    }
+    return { time: baseMin, temp: baseC, delta: 0, note: 'Spessore invariato: mantieni tempo e temperatura originali.' };
+  }
+
+  /* ---------- FORMATTAZIONE ---------- */
+  const fmtNum = (n, d = 2) => (Number.isFinite(n) ? Number(n.toFixed(d)).toLocaleString('it-IT', { maximumFractionDigits: d }) : '—');
+  const fmtG = n => (Math.round(n * 10) / 10).toLocaleString('it-IT', { maximumFractionDigits: 1 });
+
+  /* ---------- DOM REFS ---------- */
+  const $ = id => document.getElementById(id);
+  const recipeText = $('recipeText'), ingList = $('ingList'), notesBox = $('notesBox');
+  const factorBadge = $('factorBadge'), geoFactorLabel = $('geoFactorLabel'), geoDetail = $('geoDetail');
+  const comboFactorLabel = $('comboFactorLabel'), servFactorLabel = $('servFactorLabel'), ingCount = $('ingCount');
+  const origVolLabel = $('origVolLabel'), tgtVolLabel = $('tgtVolLabel');
+  const bakeTimeOut = $('bakeTimeOut'), bakeTempOut = $('bakeTempOut'), bakeNote = $('bakeNote');
+
+  const state = {
+    origShape: 'round', targetShape: 'round',
+    locks: [], steps: [], hfIndex: 0
+  };
+
+  /* ---------- LETTURA INPUT ---------- */
+  const num = id => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : null; };
+
+  function getPanDims(pan) {
+    const shape = state[pan + 'Shape'];
+    if (shape === 'round') return { d: num(pan === 'orig' ? 'origD' : 'tgtD') || 0, h: num(pan === 'orig' ? 'origH' : 'tgtH') || 0 };
+    return {
+      l: num(pan === 'orig' ? 'origL' : 'tgtL') || 0,
+      w: num(pan === 'orig' ? 'origW' : 'tgtW') || 0,
+      h: num(pan === 'orig' ? 'origH2' : 'tgtH2') || 0
+    };
+  }
+
+  /* ---------- RENDER: CORE ---------- */
+  function recompute() {
+    const origDims = getPanDims('orig'), tgtDims = getPanDims('target');
+
+    const v0 = volumeOfPan(state.origShape, origDims);
+    const v1 = volumeOfPan(state.targetShape, tgtDims);
+    const Fgeo = v1 / v0;
+
+    const s0 = num('servOrig') || 1, s1 = num('servTgt') || 1;
+    const Fserv = s1 / s0;
+    const F = Fgeo * Fserv;
+
+    // Etichette volumi
+    origVolLabel.textContent = `V₀ = ${state.origShape === 'round' ? `π·(${origDims.d/2})²·${origDims.h||5}` : `${origDims.l}·${origDims.w}·${origDims.h||5}`} = ${fmtNum(v0,1)} cm³`;
+    tgtVolLabel.textContent = `V₁ = ${state.targetShape === 'round' ? `π·(${tgtDims.d/2})²·${tgtDims.h||5}` : `${tgtDims.l}·${tgtDims.w}·${tgtDims.h||5}`} = ${fmtNum(v1,1)} cm³`;
+
+    // Badge fattori
+    factorBadge.textContent = `F = ${fmtNum(F)}×`;
+    geoFactorLabel.textContent = `${fmtNum(Fgeo)}×`;
+    geoDetail.textContent = `V₁/V₀ = ${fmtNum(v1,0)}/${fmtNum(v0,0)} cm³`;
+    comboFactorLabel.textContent = `${fmtNum(F)}×`;
+    servFactorLabel.textContent = `${fmtNum(Fserv)}×`;
+
+    // Parsing ricetta
+    const lines = recipeText.value.split('\n').map(l => l.trim()).filter(Boolean);
+    const ingredients = lines.map(parseIngredientLine).filter(Boolean);
+    const results = ingredients.map(ing => scaleIngredient(ing, F, state.locks));
+
+    // Popola datalist per suggerimenti di blocco
+    $('ingrList').innerHTML = [...new Set(ingredients.map(i => i.name))].map(n => `<option value="${escapeHtml(n)}">`).join('');
+
+    renderList(results);
+    renderNotes(results, F);
+    renderBaking(origDims, tgtDims);
+    buildSteps(results, F);
+  }
+
+  function renderList(results) {
+    ingCount.textContent = `${results.length} ingredienti`;
+    ingList.innerHTML = results.map(r => {
+      const display = r.eggText
+        ? r.eggText
+        : `${fmtG(r.scaled)} ${r.unit}`;
+      const lockChip = r.locked ? `<span class="chip bg-error/10 text-error ml-1">🔒 bloccato</span>` : '';
+      return `<div class="ing-row">
+        <div class="min-w-0">
+          <span class="font-semibold text-[15px] capitalize">${escapeHtml(r.name)}</span>
+          ${lockChip}
+          ${r.note && !r.locked ? `<div class="text-[11px] text-[#6E6A63] mt-0.5">${escapeHtml(r.note)}</div>` : ''}
+        </div>
+        <div class="font-num font-bold text-primary text-lg whitespace-nowrap">${escapeHtml(display)}</div>
+      </div>`;
+    }).join('') || `<div class="text-sm text-[#6E6A63] py-4 text-center">Inserisci almeno un ingrediente.</div>`;
+  }
+
+  function renderNotes(results, F) {
+    const critical = results.filter(r => !r.locked && r.note && !isEggIngredient(r));
+    const eggs = results.filter(r => !r.locked && isEggIngredient(r));
+    let html = '';
+    if (eggs.length) {
+      html += `<div class="segment border-[#FBE3D8] bg-[#FFF7F2]">
+        <div class="segment-title mb-1">🥚 Split uova — precisione industriale</div>
+        ${eggs.map(e => `<div class="text-[13px]"><span class="capitalize font-semibold">${escapeHtml(e.name)}</span>: <span class="font-num font-bold text-primary">${escapeHtml(e.eggText)}</span> <span class="text-[11px] text-[#6E6A63]">(${escapeHtml(e.note)})</span></div>`).join('')}
+      </div>`;
+    }
+    if (critical.length) {
+      html += `<div class="segment border-[#FBE3D8] bg-[#FFF7F2]">
+        <div class="segment-title mb-1">⚠️ Coefficienti di non-scalabilità applicati</div>
+        ${critical.map(c => `<div class="text-[12px] mb-1"><span class="capitalize font-semibold">${escapeHtml(c.name)}</span>: ${escapeHtml(c.note)}</div>`).join('')}
+      </div>`;
+    }
+    notesBox.innerHTML = html;
+  }
+
+  function renderBaking(origDims, tgtDims) {
+    const baseMin = num('bakeTime') || 40, baseC = num('bakeTemp') || 180;
+    const t0 = effectiveThickness(state.origShape, origDims);
+    const t1 = effectiveThickness(state.targetShape, tgtDims);
+    const r = estimateBaking(baseMin, baseC, t0, t1);
+    bakeTimeOut.textContent = `${fmtNum(Math.round(r.time))} min`;
+    bakeTempOut.textContent = `${fmtNum(Math.round(r.temp))} °C`;
+    bakeNote.textContent = r.note + (r.delta !== 0 ? ` Spessore: ${fmtNum(t0,1)} cm → ${fmtNum(t1,1)} cm.` : ` Spessore: ${fmtNum(t0,1)} cm.`);
+  }
+
+  /* ---------- HANDS-FREE STEPS ---------- */
+  function buildSteps(results) {
+    const steps = results.map(r => ({
+      label: r.unit === 'uova' || r.eggText ? 'Uova' : 'Ingrediente',
+      name: r.name,
+      value: r.eggText ? r.eggText.replace(/^(\d+)/, '$1') : `${fmtG(r.scaled)} ${r.unit}`,
+      note: r.locked ? '🔒 quantità originale (dispensa limitata)' : (r.note || '')
+    }));
+    // Aggiungi passo finale di cottura
+    steps.push({
+      label: 'Cottura', name: 'Inforna', value: `${bakeTimeOut.textContent} @ ${bakeTempOut.textContent}`, note: bakeNote.textContent
+    });
+    state.steps = steps;
+    state.hfIndex = Math.min(state.hfIndex, steps.length - 1);
+  }
+
+  function renderHf() {
+    const s = state.steps[state.hfIndex];
+    if (!s) return;
+    $('hfCounter').textContent = `${state.hfIndex + 1} / ${state.steps.length}`;
+    $('hfStepLabel').textContent = s.label;
+    $('hfValue').textContent = s.value;
+    $('hfName').textContent = s.name;
+    $('hfNote').textContent = s.note || '';
+    $('hfProgress').style.width = `${((state.hfIndex + 1) / state.steps.length) * 100}%`;
+  }
+
+  function openHands() {
+    if (!state.steps.length) recompute();
+    state.hfIndex = 0;
+    $('handsOverlay').classList.remove('hidden');
+    $('handsOverlay').classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    renderHf();
+  }
+  function closeHands() {
+    $('handsOverlay').classList.add('hidden');
+    $('handsOverlay').classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  function hfStep(dir) {
+    state.hfIndex = Math.max(0, Math.min(state.steps.length - 1, state.hfIndex + dir));
+    renderHf();
+  }
+
+  /* ---------- SHAPE TOGGLE ---------- */
+  function bindShapeToggles() {
+    document.querySelectorAll('.shape-toggle').forEach(grp => {
+      grp.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pan = btn.dataset.pan;
+          const shape = btn.dataset.shape;
+          state[pan + 'Shape'] = shape;
+          grp.querySelectorAll('button').forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+          const panEls = document.querySelectorAll(`.pan-dims[data-pan="${pan}"]`);
+          panEls.forEach(el => el.classList.toggle('hidden', el.dataset.shape !== shape));
+          recompute();
+        });
+      });
+    });
+  }
+
+  /* ---------- LOCK (DISPENSA LIMITATA) ---------- */
+  function addLock(name) {
+    name = name.trim();
+    if (!name || state.locks.some(l => l.toLowerCase() === name.toLowerCase())) return;
+    state.locks.push(name);
+    $('lockInput').value = '';
+    renderLocks();
+    recompute();
+  }
+  function renderLocks() {
+    $('lockChips').innerHTML = state.locks.map((l, i) =>
+      `<span class="chip bg-error/10 text-error">🔒 ${escapeHtml(l)} <button type="button" data-idx="${i}" class="font-bold hover:opacity-70" aria-label="Rimuovi blocco ${escapeHtml(l)}">✕</button></span>`
+    ).join('');
+    $('lockChips').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { state.locks.splice(+b.dataset.idx, 1); renderLocks(); recompute(); }));
+  }
+
+  /* ---------- HELPERS ---------- */
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  /* ---------- EVENT LISTENERS (real-time) ---------- */
+  ['recipeText','origD','origH','origL','origW','origH2','tgtD','tgtH','tgtL','tgtW','tgtH2',
+   'servOrig','servTgt','bakeTime','bakeTemp'].forEach(id => $(id).addEventListener('input', recompute));
+
+  $('lockAdd').addEventListener('click', () => addLock($('lockInput').value));
+  $('lockInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addLock($('lockInput').value); } });
+
+  $('handsBtn').addEventListener('click', openHands);
+  $('handsBtn2').addEventListener('click', openHands);
+  $('hfClose').addEventListener('click', closeHands);
+  $('hfPrev').addEventListener('click', () => hfStep(-1));
+  $('hfNext').addEventListener('click', () => hfStep(1));
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('handsOverlay').classList.contains('hidden')) closeHands();
+    if (!$('handsOverlay').classList.contains('hidden')) {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); hfStep(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); hfStep(-1); }
+    }
+  });
+
+  // Tap sull'area centrale → avanti (mani sporche)
+  $('handsOverlay').addEventListener('click', e => {
+    if (!e.target.closest('button')) hfStep(1);
+  });
+
+  bindShapeToggles();
+  recompute();
+})();
+</script>
+</body>
+</html>
