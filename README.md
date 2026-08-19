@@ -249,3 +249,18 @@ git remote add origin https://github.com/Alftakeaway/aiuto-cuoco.git
 git push -u origin main
 vercel --prod
 ```
+
+---
+
+## Changelog
+
+### v1.1 — correzione sovrapposizioni & migliorie
+- **Bug `<details>`:** la regola author `.slider-row { display:flex }` sovrascriveva la regola UA `details:not([open]) > * { display:none }`, mostrando il contenuto anche a pannello chiuso e sovrapponendolo al pulsante "Modalità Mani Sporche". Risolto con `details:not([open]) > *:not(summary) { display: none !important; }`.
+- **Overflow orizzontale mobile (64px):** colonne grid/flex ancorate al min-content degli `<input>` numerici. Risolto con `min-width: 0` sugli input e griglie `minmax(0,1fr)` (`.pan-dims`).
+- **Sovrapposizione nome ↔ valore nelle righe ingredienti:** il valore monospaziato con `whitespace-nowrap` (es. testo split uova lungo) schiacciava la colonna del nome a 5px. La riga usa ora `grid-template-columns: minmax(0,1fr) auto`; i valori lunghi (>22 caratteri) passano automaticamente a una riga dedicata full-width (`ing-value.is-long`).
+- **Note critiche:** nome+valore sulla stessa riga, spiegazione come blocco sotto (`.crit-line`).
+- **Persistenza locale** (`localStorage`, chiave `pk-state-v1`): ricetta, teglie, porzioni, cottura e blocchi sopravvivono al reload.
+- **Accessibilità Hands-Free:** attributo `inert` su `header`/`main`/`footer` durante l'overlay + aggiornamento di `theme-color` (`#0B0F19` ↔ `#FAFAFA`).
+- **Font adattivo Hands-Free:** testi lunghi (uova frazionate) scalano con `clamp()` (`hf-number.long`).
+- **Mobile UX:** `inputmode="decimal"` sui campi numerici, `-webkit-tap-highlight-color` disattivato, safe-area insets su footer e overlay, `overflow-x: clip` di sicurezza.
+- **QA automatico:** audit di layout headless (320–1440px, teglia rettangolare, blocchi, Hands-Free) senza overflow né sovrapposizioni non volute; 26 test unitari sul motore di calcolo.

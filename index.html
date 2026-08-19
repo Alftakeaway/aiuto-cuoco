@@ -34,7 +34,10 @@
     color: var(--text);
     font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
   }
+
+  * { -webkit-tap-highlight-color: transparent; }
 
   /* Numeri / grammature: monospazio per allineare le colonne dei pesi */
   .font-num { font-family: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
@@ -45,7 +48,7 @@
   .card { background: var(--surface); border: 1px solid #ECE7E2; box-shadow: 0 1px 2px rgba(30,30,36,.04), 0 8px 24px -18px rgba(30,30,36,.18); }
 
   .input {
-    width: 100%; background: var(--surface); border: 1.5px solid #E4DDD6; color: var(--text);
+    width: 100%; min-width: 0; background: var(--surface); border: 1.5px solid #E4DDD6; color: var(--text);
     border-radius: 10px; padding: .55rem .7rem; font-size: .875rem; transition: border-color .15s, box-shadow .15s;
   }
   .input:focus { border-color: var(--primary); box-shadow: var(--ring); outline: none; }
@@ -78,18 +81,33 @@
   .progress-fill { height: 100%; width: 0%; background: var(--success); transition: width .35s ease; }
 
   /* Output row */
-  .ing-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: baseline; padding: .65rem .1rem; border-bottom: 1px dashed #ECE7E2; }
+  .ing-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; align-items: baseline; padding: .65rem .1rem; border-bottom: 1px dashed #ECE7E2; }
   .ing-row:last-child { border-bottom: none; }
+  .ing-name { overflow-wrap: anywhere; min-width: 0; }
+  .ing-value { min-width: 0; text-align: right; white-space: nowrap; }
+  .ing-value.is-long { grid-column: 1 / -1; text-align: left; margin-top: .15rem; font-size: 1rem; white-space: normal; overflow-wrap: anywhere; }
 
   /* Numeri giganti Hands-Free leggibili a 1.5m */
   .hf-number { font-size: 42pt; line-height: 1.1; color: var(--primary); font-weight: 700; }
+  .hf-number.long { font-size: clamp(20pt, 7.5vw, 30pt); }
   @media (max-width: 640px) { .hf-number { font-size: 34pt; } }
+
+  /* Nota critica: nome+valore su una riga, spiegazione sotto come blocco */
+  .crit-line { padding: .45rem 0; border-bottom: 1px dashed #FBE3D8; }
+  .crit-line:last-child { border-bottom: none; }
+  .crit-line .crit-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
+  .crit-line .crit-note { display: block; font-size: 11px; color: #6E6A63; margin-top: .15rem; }
 
   .segment { background: #FFF7F2; border: 1px solid #FBE3D8; border-radius: 12px; padding: .9rem; }
   .segment-title { font-size: .8rem; font-weight: 700; color: var(--primary); letter-spacing: .03em; text-transform: uppercase; display: flex; align-items: center; gap: .4rem; }
 
   .slider-row { display: flex; gap: .75rem; }
-  .slider-row > div { flex: 1; }
+  .slider-row > div { flex: 1; min-width: 0; }
+
+  /* Griglie teglie: colonne riducibili sotto il min-content degli input (previene overflow mobile) */
+  .pan-dims { display: grid; }
+  .pan-dims[data-shape="round"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pan-dims[data-shape="rect"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
   /* Toggle shape */
   .shape-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
@@ -99,6 +117,9 @@
   details > summary { cursor: pointer; list-style: none; }
   details > summary::-webkit-details-marker { display: none; }
   details[open] .chev { transform: rotate(90deg); }
+  /* Ripristina il comportamento UA di <details> chiuso: i classi author
+     (es. .slider-row { display:flex }) sovrascrivevano display:none del browser */
+  details:not([open]) > *:not(summary) { display: none !important; }
   .chev { transition: transform .15s; display: inline-block; }
 
   ::selection { background: rgba(230,95,43,.25); }
@@ -220,7 +241,7 @@
       <div class="text-[13px] font-bold mb-1">Modalità Dispensa Limitata</div>
       <p class="text-[11px] text-[#6E6A63] mb-2">Blocca un ingrediente: mantiene la quantità originale (usa ciò che hai).</p>
       <div class="flex gap-2">
-        <input id="lockInput" class="input font-num" type="text" placeholder="es. latte" list="ingrList" />
+        <input id="lockInput" class="input font-num flex-1 min-w-0" type="text" placeholder="es. latte" list="ingrList" />
         <datalist id="ingrList"></datalist>
         <button id="lockAdd" class="btn-ghost shrink-0 px-3" type="button">🔒 Blocca</button>
       </div>
@@ -312,13 +333,13 @@
     <div class="text-white/40 text-sm max-w-sm" id="hfNote"></div>
   </div>
 
-  <div class="p-4 pb-8 grid grid-cols-2 gap-3 max-w-lg mx-auto w-full">
+  <div class="p-4 pb-8 grid grid-cols-2 gap-3 max-w-lg mx-auto w-full" style="padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));">
     <button id="hfPrev" class="btn-ghost !border-white/20 !text-white py-5 text-lg" type="button">← Precedente</button>
     <button id="hfNext" class="btn-primary py-5 text-lg" type="button">Avanti →</button>
   </div>
 </div>
 
-<footer class="max-w-[1400px] mx-auto px-4 py-6 text-center text-[11px] text-[#6E6A63]">
+<footer class="max-w-[1400px] mx-auto px-4 py-6 text-center text-[11px] text-[#6E6A63]" style="padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
   ProportionKitchen · Aiuto Cuoco — scalabilità non lineare: agenti lievitanti (F^0.75), spezie (1+ln F), idratazione (−0,5%/F&gt;3), split uova a precisione industriale.
 </footer>
 
@@ -610,6 +631,7 @@
     renderNotes(results, F);
     renderBaking(origDims, tgtDims);
     buildSteps(results, F);
+    persist();
   }
 
   function renderList(results) {
@@ -618,14 +640,15 @@
       const display = r.eggText
         ? r.eggText
         : `${fmtG(r.scaled)} ${r.unit}`;
+      const isLong = display.length > 22;
       const lockChip = r.locked ? `<span class="chip bg-error/10 text-error ml-1">🔒 bloccato</span>` : '';
       return `<div class="ing-row">
-        <div class="min-w-0">
+        <div class="ing-name">
           <span class="font-semibold text-[15px] capitalize">${escapeHtml(r.name)}</span>
           ${lockChip}
           ${r.note && !r.locked ? `<div class="text-[11px] text-[#6E6A63] mt-0.5">${escapeHtml(r.note)}</div>` : ''}
         </div>
-        <div class="font-num font-bold text-primary text-lg whitespace-nowrap">${escapeHtml(display)}</div>
+        <div class="ing-value font-num font-bold text-primary text-lg ${isLong ? 'is-long' : ''}">${escapeHtml(display)}</div>
       </div>`;
     }).join('') || `<div class="text-sm text-[#6E6A63] py-4 text-center">Inserisci almeno un ingrediente.</div>`;
   }
@@ -637,13 +660,19 @@
     if (eggs.length) {
       html += `<div class="segment border-[#FBE3D8] bg-[#FFF7F2]">
         <div class="segment-title mb-1">🥚 Split uova — precisione industriale</div>
-        ${eggs.map(e => `<div class="text-[13px]"><span class="capitalize font-semibold">${escapeHtml(e.name)}</span>: <span class="font-num font-bold text-primary">${escapeHtml(e.eggText)}</span> <span class="text-[11px] text-[#6E6A63]">(${escapeHtml(e.note)})</span></div>`).join('')}
+        ${eggs.map(e => `<div class="crit-line">
+          <div class="crit-head"><span class="capitalize font-semibold">${escapeHtml(e.name)}</span><span class="font-num font-bold text-primary">${escapeHtml(e.eggText)}</span></div>
+          <span class="crit-note">${escapeHtml(e.note)}</span>
+        </div>`).join('')}
       </div>`;
     }
     if (critical.length) {
       html += `<div class="segment border-[#FBE3D8] bg-[#FFF7F2]">
         <div class="segment-title mb-1">⚠️ Coefficienti di non-scalabilità applicati</div>
-        ${critical.map(c => `<div class="text-[12px] mb-1"><span class="capitalize font-semibold">${escapeHtml(c.name)}</span>: ${escapeHtml(c.note)}</div>`).join('')}
+        ${critical.map(c => `<div class="crit-line">
+          <div class="crit-head"><span class="capitalize font-semibold">${escapeHtml(c.name)}</span><span class="font-num font-bold text-primary">${escapeHtml(fmtG(c.scaled) + ' ' + c.unit)}</span></div>
+          <span class="crit-note">${escapeHtml(c.note)}</span>
+        </div>`).join('')}
       </div>`;
     }
     notesBox.innerHTML = html;
@@ -680,7 +709,9 @@
     if (!s) return;
     $('hfCounter').textContent = `${state.hfIndex + 1} / ${state.steps.length}`;
     $('hfStepLabel').textContent = s.label;
-    $('hfValue').textContent = s.value;
+    const valEl = $('hfValue');
+    valEl.textContent = s.value;
+    valEl.classList.toggle('long', s.value.length > 14); // font adattivo per testi lunghi (uova frazionate)
     $('hfName').textContent = s.name;
     $('hfNote').textContent = s.note || '';
     $('hfProgress').style.width = `${((state.hfIndex + 1) / state.steps.length) * 100}%`;
@@ -692,12 +723,16 @@
     $('handsOverlay').classList.remove('hidden');
     $('handsOverlay').classList.add('flex');
     document.body.style.overflow = 'hidden';
+    document.querySelectorAll('header, main, footer').forEach(el => el.setAttribute('inert', ''));
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0B0F19');
     renderHf();
   }
   function closeHands() {
     $('handsOverlay').classList.add('hidden');
     $('handsOverlay').classList.remove('flex');
     document.body.style.overflow = '';
+    document.querySelectorAll('header, main, footer').forEach(el => el.removeAttribute('inert'));
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#FAFAFA');
   }
   function hfStep(dir) {
     state.hfIndex = Math.max(0, Math.min(state.steps.length - 1, state.hfIndex + dir));
@@ -705,16 +740,23 @@
   }
 
   /* ---------- SHAPE TOGGLE ---------- */
+  function syncShapeUI() {
+    document.querySelectorAll('.shape-toggle button').forEach(btn => {
+      const active = state[btn.dataset.pan + 'Shape'] === btn.dataset.shape;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.pan-dims').forEach(el => {
+      el.classList.toggle('hidden', state[el.dataset.pan + 'Shape'] !== el.dataset.shape);
+    });
+  }
+
   function bindShapeToggles() {
     document.querySelectorAll('.shape-toggle').forEach(grp => {
       grp.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', () => {
-          const pan = btn.dataset.pan;
-          const shape = btn.dataset.shape;
-          state[pan + 'Shape'] = shape;
-          grp.querySelectorAll('button').forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
-          const panEls = document.querySelectorAll(`.pan-dims[data-pan="${pan}"]`);
-          panEls.forEach(el => el.classList.toggle('hidden', el.dataset.shape !== shape));
+          state[btn.dataset.pan + 'Shape'] = btn.dataset.shape;
+          syncShapeUI();
           recompute();
         });
       });
@@ -740,6 +782,34 @@
   /* ---------- HELPERS ---------- */
   function escapeHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  /* ---------- PERSISTENZA LOCALE (riprendi dove eri) ---------- */
+  const STORE_KEY = 'pk-state-v1';
+  const readInputs = ids => { const o = {}; ids.forEach(id => (o[id] = $(id).value)); return o; };
+  function collectState() {
+    return {
+      recipe: recipeText.value,
+      orig: readInputs(['origD', 'origH', 'origL', 'origW', 'origH2']),
+      tgt: readInputs(['tgtD', 'tgtH', 'tgtL', 'tgtW', 'tgtH2']),
+      serv: readInputs(['servOrig', 'servTgt']),
+      bake: readInputs(['bakeTime', 'bakeTemp']),
+      locks: state.locks,
+      shapes: { orig: state.origShape, target: state.targetShape }
+    };
+  }
+  function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify(collectState())); } catch (e) { /* storage non disponibile */ } }
+  function restore() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { /* niente da ripristinare */ }
+    if (!d) return false;
+    if (typeof d.recipe === 'string') recipeText.value = d.recipe;
+    const apply = m => { if (!m) return; Object.keys(m).forEach(id => { const el = $(id); if (el) el.value = m[id]; }); };
+    apply(d.orig); apply(d.tgt); apply(d.serv); apply(d.bake);
+    if (Array.isArray(d.locks)) state.locks = d.locks.filter(l => typeof l === 'string');
+    if (d.shapes && ['round', 'rect'].includes(d.shapes.orig)) state.origShape = d.shapes.orig;
+    if (d.shapes && ['round', 'rect'].includes(d.shapes.target)) state.targetShape = d.shapes.target;
+    return true;
   }
 
   /* ---------- EVENT LISTENERS (real-time) ---------- */
@@ -768,6 +838,14 @@
   });
 
   bindShapeToggles();
+
+  // Miglioria mobile: tastiera numerica sui campi numerici
+  document.querySelectorAll('input[type="number"]').forEach(i => i.setAttribute('inputmode', 'decimal'));
+
+  // Ripristina lo stato salvato (ricetta, teglie, porzioni, blocchi) e ricalcola
+  restore();
+  syncShapeUI();
+  renderLocks();
   recompute();
 })();
 </script>
