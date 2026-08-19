@@ -53,6 +53,8 @@
   }
   .input:focus { border-color: var(--primary); box-shadow: var(--ring); outline: none; }
 
+  select.input { appearance: auto; }
+
   .label { display: block; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #6E6A63; margin-bottom: .3rem; }
 
   .chip { display: inline-flex; align-items: center; gap: .35rem; font-size: .72rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; }
@@ -64,8 +66,10 @@
   .btn-primary:hover { filter: brightness(1.06); }
   .btn-primary:active { transform: scale(.97); }
 
-  .btn-ghost { background: transparent; border: 1.5px solid #E4DDD6; color: var(--text); border-radius: 12px; padding: .7rem 1.1rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .btn-ghost { background: transparent; border: 1.5px solid #E4DDD6; color: var(--text); border-radius: 12px; padding: .6rem 1rem; font-weight: 600; cursor: pointer; transition: background .15s; }
   .btn-ghost:hover { background: #F4F1ED; }
+  .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; }
+  .btn-icon:disabled { opacity: .45; cursor: not-allowed; }
 
   /* Pulsante gigante Hands-Free (min 64x64) */
   .btn-hands {
@@ -86,6 +90,7 @@
   .ing-name { overflow-wrap: anywhere; min-width: 0; }
   .ing-value { min-width: 0; text-align: right; white-space: nowrap; }
   .ing-value.is-long { grid-column: 1 / -1; text-align: left; margin-top: .15rem; font-size: 1rem; white-space: normal; overflow-wrap: anywhere; }
+  .ing-alt { font-size: 11px; color: #8A857D; font-weight: 500; white-space: nowrap; }
 
   /* Numeri giganti Hands-Free leggibili a 1.5m */
   .hf-number { font-size: 42pt; line-height: 1.1; color: var(--primary); font-weight: 700; }
@@ -122,6 +127,19 @@
   details:not([open]) > *:not(summary) { display: none !important; }
   .chev { transition: transform .15s; display: inline-block; }
 
+  /* Toast */
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; transition: all .25s ease; z-index: 90; pointer-events: none; }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* Tour */
+  #tourSpotlight { position: fixed; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(11,15,25,.55); z-index: 100; pointer-events: none; transition: all .25s ease; }
+  #tourOverlay { position: fixed; inset: 0; z-index: 101; display: flex; align-items: flex-end; justify-content: center; padding: 16px; }
+  .tour-card { background: var(--surface); border-radius: 18px; max-width: 480px; width: 100%; box-shadow: 0 24px 60px -20px rgba(11,15,25,.5); }
+
+  /* Mic listening pulse */
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(230,95,43,.55); } 100% { box-shadow: 0 0 0 18px rgba(230,95,43,0); } }
+  .mic-listening { animation: pulse 1.2s infinite; border-color: var(--primary) !important; }
+
   ::selection { background: rgba(230,95,43,.25); }
 </style>
 
@@ -143,7 +161,6 @@
 <header class="sticky top-0 z-40 backdrop-blur bg-chalk/85 border-b border-[#ECE7E2]">
   <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center gap-3">
     <div class="w-10 h-10 rounded-xl bg-secondary text-white flex items-center justify-center shrink-0" aria-hidden="true">
-      <!-- Icona Chef Hat -->
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 3c2.6 0 4.6 2.1 4.6 4.7 0 .3 0 .6-.1.9 2.1.6 3.7 2.5 3.7 4.7 0 1.8-1.3 3.1-3 3.1H6.8c-1.7 0-3-1.3-3-3.1 0-2.2 1.6-4.1 3.7-4.7A4.7 4.7 0 0 1 12 3zM6 17.5h12v1.8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1.8z"/></svg>
     </div>
     <div class="min-w-0">
@@ -152,6 +169,9 @@
     </div>
     <div class="ml-auto flex items-center gap-2">
       <span id="liveBadge" class="chip bg-success/10 text-success hidden sm:inline-flex"><span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span> Calcolo in tempo reale</span>
+      <button id="tourBtn" class="btn-ghost btn-icon !p-2.5" title="Guida rapida" aria-label="Guida rapida">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button>
       <button id="handsBtn" class="btn-hands" title="Modalità Mani Sporche (Hands-Free)" aria-label="Attiva modalità Mani Sporche">
         <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 3c2.6 0 4.6 2.1 4.6 4.7 0 .3 0 .6-.1.9 2.1.6 3.7 2.5 3.7 4.7 0 1.8-1.3 3.1-3 3.1H6.8c-1.7 0-3-1.3-3-3.1 0-2.2 1.6-4.1 3.7-4.7A4.7 4.7 0 0 1 12 3zM6 17.5h12v1.8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1.8z"/></svg>
       </button>
@@ -160,13 +180,25 @@
 </header>
 
 <!-- ==================== MAIN 3 COLONNE ==================== -->
-<main class="max-w-[1400px] mx-auto px-4 py-5 grid gap-5 lg:grid-cols-3 items-start">
+<main class="max-w-[1400px] mx-auto px-4 py-5 grid gap-5 grid-cols-1 lg:grid-cols-3 items-start">
 
   <!-- ============ COLONNA 1 — INPUT RICETTA ORIGINALE ============ -->
-  <section class="card rounded-2xl p-4 space-y-4" aria-label="Ricetta originale">
+  <section class="card rounded-2xl p-4 space-y-4" aria-label="Ricetta originale" data-tour="recipe">
     <div class="segment-title">1 · Ricetta originale</div>
 
     <div>
+      <label class="label" for="exampleSelect">Prova con un esempio</label>
+      <select id="exampleSelect" class="input">
+        <option value="">— Scegli una ricetta di esempio —</option>
+        <option value="torta">🍰 Torta della Nonna (tonda 22cm)</option>
+        <option value="pancake">🥞 Pancake (rettangolare 24x18)</option>
+        <option value="ciambellone">🍩 Ciambellone (tonda 24cm)</option>
+        <option value="frolla">🍪 Pasta frolla (rettangolare 28x20)</option>
+        <option value="risotto">🍚 Risotto per molti (porzioni)</option>
+      </select>
+    </div>
+
+    <div data-tour="recipe-text">
       <label class="label" for="recipeText">Ingredienti (uno per riga)</label>
       <textarea id="recipeText" rows="11" class="input font-num resize-y text-[13px] leading-relaxed" spellcheck="false" placeholder="200g di farina 00&#10;100g di zucchero&#10;3 uova&#10;80g di burro&#10;120ml di latte&#10;1 bustina di lievito chimico&#10;1/2 cucchiaino di noce moscata&#10;1 pizzico di sale">200g di farina 00
 100g di zucchero
@@ -185,7 +217,7 @@
         <span class="text-[13px] font-bold">Teglia di partenza</span>
         <span class="chip bg-secondary/10 text-secondary">Originale</span>
       </div>
-      <div class="shape-toggle mb-3" role="tablist" aria-label="Forma teglia originale">
+      <div class="shape-toggle mb-3" role="tablist" aria-label="Forma teglia originale" data-tour="pan-orig">
         <button data-pan="orig" data-shape="round" class="active" role="tab" aria-selected="true" type="button">⭘ Tonda</button>
         <button data-pan="orig" data-shape="rect" role="tab" aria-selected="false" type="button">▭ Rettangolare</button>
       </div>
@@ -203,7 +235,7 @@
   </section>
 
   <!-- ============ COLONNA 2 — CONFIGURATORE GEOMETRICO/PORZIONI ============ -->
-  <section class="card rounded-2xl p-4 space-y-4" aria-label="Configuratore">
+  <section class="card rounded-2xl p-4 space-y-4" aria-label="Configuratore" data-tour="config">
     <div class="segment-title">2 · Configuratore</div>
 
     <fieldset class="segment">
@@ -230,23 +262,47 @@
 
     <div class="segment">
       <div class="text-[13px] font-bold mb-2">Porzioni</div>
-      <div class="slider-row">
+      <div class="slider-row" data-tour="servings">
         <div><label class="label" for="servOrig">Originali</label><input id="servOrig" class="input font-num" type="number" step="1" min="1" value="4" /></div>
         <div><label class="label" for="servTgt">Desiderate</label><input id="servTgt" class="input font-num" type="number" step="1" min="1" value="6" /></div>
       </div>
       <p class="text-[11px] text-[#6E6A63] mt-1">Fattore porzioni = <span class="font-num font-bold text-secondary" id="servFactorLabel">1,50×</span></p>
     </div>
 
-    <div class="segment">
-      <div class="text-[13px] font-bold mb-1">Modalità Dispensa Limitata</div>
-      <p class="text-[11px] text-[#6E6A63] mb-2">Blocca un ingrediente: mantiene la quantità originale (usa ciò che hai).</p>
-      <div class="flex gap-2">
-        <input id="lockInput" class="input font-num flex-1 min-w-0" type="text" placeholder="es. latte" list="ingrList" />
-        <datalist id="ingrList"></datalist>
-        <button id="lockAdd" class="btn-ghost shrink-0 px-3" type="button">🔒 Blocca</button>
+    <!-- DISPENSA LIMITATA (blocca o imposta un massimo disponibile) -->
+    <div class="segment" data-tour="pantry">
+      <div class="text-[13px] font-bold mb-1">Dispensa limitata</div>
+      <p class="text-[11px] text-[#6E6A63] mb-2">
+        Blocca un ingrediente (mantiene la quantità originale) <b>oppure</b> imposta la quantità massima che hai:
+        il fattore di scala viene limitato automaticamente e l'avviso ti guida.
+      </p>
+      <div class="flex flex-col gap-2">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="col-span-2"><label class="label" for="pantryName">Ingrediente</label>
+            <input id="pantryName" class="input font-num" type="text" placeholder="es. farina" list="ingrList" />
+            <datalist id="ingrList"></datalist>
+          </div>
+          <div><label class="label" for="pantryAmount">Quantità max (opz. = blocca)</label>
+            <input id="pantryAmount" class="input font-num" type="number" min="0" step="any" placeholder="es. 150" />
+          </div>
+          <div><label class="label" for="pantryUnit">Unità</label>
+            <select id="pantryUnit" class="input font-num">
+              <option value="">auto</option>
+              <option>g</option><option>kg</option><option>ml</option><option>l</option>
+              <option>tazza</option><option>cucchiaio</option><option>uova</option>
+            </select>
+          </div>
+        </div>
+        <button id="pantryAdd" class="btn-ghost w-full" type="button">＋ Aggiungi alla dispensa</button>
       </div>
-      <div id="lockChips" class="flex flex-wrap gap-2 mt-2"></div>
+      <div id="pantryList" class="flex flex-wrap gap-2 mt-2"></div>
     </div>
+
+    <!-- LA MIA DISPENSA INTELLIGENTE (regole personalizzabili) -->
+    <details class="segment" data-tour="rules">
+      <summary class="text-[13px] font-bold flex items-center gap-2"><span class="chev">▶</span> ⚗️ La mia dispensa intelligente (regole)</summary>
+      <div class="mt-3 space-y-3" id="rulesBox"></div>
+    </details>
 
     <details class="segment">
       <summary class="text-[13px] font-bold flex items-center gap-2"><span class="chev">▶</span> Cottura originale (per stima termodinamica)</summary>
@@ -256,18 +312,34 @@
       </div>
     </details>
 
-    <button id="handsBtn2" class="btn-primary w-full flex items-center justify-center gap-2" type="button">
+    <button id="handsBtn2" class="btn-primary w-full flex items-center justify-center gap-2" type="button" data-tour="hands">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 3c2.6 0 4.6 2.1 4.6 4.7 0 .3 0 .6-.1.9 2.1.6 3.7 2.5 3.7 4.7 0 1.8-1.3 3.1-3 3.1H6.8c-1.7 0-3-1.3-3-3.1 0-2.2 1.6-4.1 3.7-4.7A4.7 4.7 0 0 1 12 3zM6 17.5h12v1.8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-1.8z"/></svg>
       Modalità Mani Sporche
     </button>
   </section>
 
   <!-- ============ COLONNA 3 — OUTPUT INTERATTIVO ============ -->
-  <section class="card rounded-2xl p-4 space-y-4 lg:sticky lg:top-20" aria-label="Output ricalcolato">
-    <div class="flex items-center justify-between">
+  <section class="card rounded-2xl p-4 space-y-4 lg:sticky lg:top-20" aria-label="Output ricalcolato" data-tour="output">
+    <div class="flex items-center justify-between flex-wrap gap-2">
       <div class="segment-title">3 · Output ricalcolato</div>
       <div id="factorBadge" class="chip bg-primary/10 text-primary font-num font-bold">F = 1,00×</div>
     </div>
+
+    <!-- Azioni: salva / esporta / condividi -->
+    <div class="flex gap-2 flex-wrap">
+      <button id="saveBtn" class="btn-ghost btn-icon flex-1 min-w-[90px]" type="button">💾 Salva</button>
+      <button id="exportBtn" class="btn-ghost btn-icon flex-1 min-w-[90px]" type="button">📤 Esporta</button>
+      <button id="shareBtn" class="btn-ghost btn-icon flex-1 min-w-[90px]" type="button">🔗 Copia link</button>
+    </div>
+    <div id="saveRow" class="hidden flex gap-2">
+      <input id="saveName" class="input font-num" type="text" placeholder="Nome della ricetta (es. Torta per 8)" maxlength="60" />
+      <button id="saveConfirm" class="btn-primary shrink-0" type="button">Salva</button>
+      <button id="saveCancel" class="btn-ghost shrink-0" type="button">✕</button>
+    </div>
+    <details id="savedBox" class="segment !bg-white">
+      <summary class="text-[13px] font-bold flex items-center gap-2"><span class="chev">▶</span> 🗂️ Ricette salvate <span class="chip bg-secondary/10 text-secondary font-num" id="savedCount">0</span></summary>
+      <div id="savedList" class="mt-2 space-y-2"></div>
+    </details>
 
     <!-- Riepilogo fattore -->
     <div class="segment bg-[#F6FBF8] border-[#DCEBE2]">
@@ -278,12 +350,15 @@
           <div class="text-[10px] text-[#6E6A63] font-num" id="geoDetail">V₁/V₀</div>
         </div>
         <div>
-          <div class="text-[11px] text-[#6E6A63] uppercase font-semibold tracking-wide">Fattore combinato</div>
+          <div class="text-[11px] text-[#6E6A63] uppercase font-semibold tracking-wide">Fattore applicato</div>
           <div class="font-num font-extrabold text-2xl text-primary" id="comboFactorLabel">1,50×</div>
-          <div class="text-[10px] text-[#6E6A63] font-num">geo × porzioni</div>
+          <div class="text-[10px] text-[#6E6A63] font-num" id="comboDetail">richiesto 1,50× · porzioni × geo</div>
         </div>
       </div>
     </div>
+
+    <!-- Avviso dispensa limitata -->
+    <div id="warnBox" class="hidden"></div>
 
     <!-- Lista ingredienti -->
     <div>
@@ -315,15 +390,24 @@
   </section>
 </main>
 
-<!-- ==================== HANDS-FREE OVERLAY (MODULO 1 §3) ==================== -->
+<!-- ==================== HANDS-FREE OVERLAY (MODULO 1 §3 + VOCE) ==================== -->
 <div id="handsOverlay" class="fixed inset-0 bg-hands z-50 hidden flex-col" role="dialog" aria-modal="true" aria-label="Modalità Mani Sporche">
   <div class="progress-track" aria-hidden="true"><div id="hfProgress" class="progress-fill"></div></div>
 
   <div class="flex items-center justify-between p-4">
     <span class="chip bg-white/10 text-white font-num" id="hfCounter">1 / 10</span>
-    <button id="hfClose" class="btn-hands !bg-white/10 !text-white" aria-label="Esci dalla modalità Mani Sporche">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
+    <div class="flex items-center gap-2">
+      <button id="hfSpeaker" class="btn-hands !bg-white/10 !text-white !w-12 !h-12 !min-w-12 !min-h-12" title="Leggi ad alta voce" aria-label="Attiva lettura vocale" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      </button>
+      <button id="hfMic" class="btn-hands !bg-white/10 !text-white !w-12 !h-12 !min-w-12 !min-h-12" title="Comandi vocali" aria-label="Attiva comandi vocali" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      </button>
+      <span id="hfVoiceStatus" class="chip bg-white/10 text-white/70 hidden">🎙 Ascolto…</span>
+      <button id="hfClose" class="btn-hands !bg-white/10 !text-white" aria-label="Esci dalla modalità Mani Sporche">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 select-none">
@@ -339,13 +423,41 @@
   </div>
 </div>
 
+<!-- ==================== TOUR (ONBOARDING) ==================== -->
+<div id="tourSpotlight" class="hidden" aria-hidden="true"></div>
+<div id="tourOverlay" class="hidden" role="dialog" aria-modal="true" aria-label="Guida rapida">
+  <div class="tour-card p-5">
+    <div class="flex items-center justify-between mb-2">
+      <span class="chip bg-primary/10 text-primary font-semibold" id="tourStep">1 / 5</span>
+      <button id="tourSkip" class="btn-ghost !border-transparent !text-[#6E6A63] text-sm" type="button">Salta ✕</button>
+    </div>
+    <div class="text-lg font-bold leading-snug" id="tourTitle"></div>
+    <p class="text-sm text-[#6E6A63] mt-1 leading-relaxed" id="tourBody"></p>
+    <div class="flex justify-between items-center mt-4">
+      <label class="flex items-center gap-2 text-xs text-[#6E6A63] cursor-pointer">
+        <input type="checkbox" id="tourDontShow" class="accent-[#E65F2B]" /> Non mostrare più
+      </label>
+      <div class="flex gap-2">
+        <button id="tourPrev" class="btn-ghost" type="button">← Indietro</button>
+        <button id="tourNext" class="btn-primary" type="button">Avanti →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOAST ==================== -->
+<div id="toast" role="status" aria-live="polite">
+  <span class="chip bg-ink text-white !text-[13px] !px-4 !py-2 shadow-lg" id="toastMsg"></span>
+</div>
+
 <footer class="max-w-[1400px] mx-auto px-4 py-6 text-center text-[11px] text-[#6E6A63]" style="padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
-  ProportionKitchen · Aiuto Cuoco — scalabilità non lineare: agenti lievitanti (F^0.75), spezie (1+ln F), idratazione (−0,5%/F&gt;3), split uova a precisione industriale.
+  ProportionKitchen · Aiuto Cuoco — scalabilità non lineare: agenti lievitanti (F^exp), spezie (1+ln F), idratazione (−0,5%/F&gt;3), split uova a precisione industriale. Regole e dispensa personalizzabili.
 </footer>
 
 <script>
 /* ============================================================================
    MODULO 2 & 3 — MOTORE DI CALCOLO + EXTRACTION LOGIC (JavaScript nativo)
+   + DISPENSA FLESSIBILE, REGOLE PERSONALIZZABILI, VOCE, SALVATAGGIO, TOUR
    ============================================================================ */
 (() => {
   'use strict';
@@ -353,7 +465,6 @@
   /* ---------- 3.1 REGEX ENGINE / NLU ---------- */
   const FRAC_UNI = { '½':0.5, '⅓':1/3, '⅔':2/3, '¼':0.25, '¾':0.75, '⅛':0.125, '⅜':0.375, '⅝':0.625, '⅞':0.875 };
 
-  // Sinonimi unità -> unità canonica di visualizzazione
   const UNIT_MAP = {
     'g':'g','gr':'g','grammo':'g','grammi':'g','gramm':'g',
     'kg':'kg','chilo':'kg','chili':'kg','chilogrammo':'kg','chilogrammi':'kg',
@@ -372,196 +483,268 @@
     'noce':'noce','noci':'noce','pezzo':'pezzo','pezzi':'pezzo','fetta':'fetta','fette':'fetta'
   };
 
-  // Regex per riconoscere l'unità di misura all'inizio del resto della riga
   const UNIT_RE = new RegExp('^(?:' + Object.keys(UNIT_MAP).sort((a,b)=>b.length-a.length).map(escapeRe).join('|') + ')\\b');
-
   function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
   /**
    * parseIngredientLine — estrae {amount, unit, name} da una riga di ricetta.
-   * Gestisce: frazioni semplici (1/2), miste (2 1/2), decimali (1,5 / 1.5),
-   * unicode (¾), numeri in parole (un, mezzo), quantità senza unità (3 uova),
-   * e la preposizione "di" ("un pizzico di ...").
+   * Gestisce frazioni (1/2, 2 1/2), decimali (1,5), unicode (¾), parole (un,
+   * mezzo), quantità senza unità (3 uova) e la preposizione "di".
    */
   function parseIngredientLine(rawLine) {
     let line = rawLine.trim().replace(/,/g, '.').replace(/[½⅓⅔¼¾⅛⅜⅝⅞]/g, ch => FRAC_UNI[ch]);
     if (!line) return null;
-
-    let amount = 1;
-    let rest = line;
-    const fraction = { start: 0 };
-
-    // 1) Frazione mista: "2 1/2"
-    let m = rest.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)/);
-    if (m) { amount = parseInt(m[1]) + parseInt(m[2]) / parseInt(m[3]); rest = rest.slice(m[0].length); }
-    else {
-      // 2) Frazione semplice: "1/2" (senza numero intero)
-      m = rest.match(/^(\d+)\s*\/\s*(\d+)/);
-      if (m) { amount = parseInt(m[1]) / parseInt(m[2]); rest = rest.slice(m[0].length); }
-      else {
-        // 3) Decimale: "1,5" / "1.5"
-        m = rest.match(/^(\d+(?:\.\d+)?)/);
-        if (m) { amount = parseFloat(m[1]); rest = rest.slice(m[0].length); }
-        else {
-          // 4) Numeri in parole: "un", "uno", "una", "mezzo/mezza", "due"
-          m = rest.match(/^(un|uno|una|mezzo|mezza|due|tre)\b/i);
-          if (m) {
-            amount = /^mezz/i.test(m[1]) ? 0.5 : (m[1].toLowerCase() === 'due' ? 2 : (m[1].toLowerCase() === 'tre' ? 3 : 1));
-            rest = rest.slice(m[0].length);
-          }
-        }
-      }
+    let amount = 1, rest = line, m;
+    if ((m = rest.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)/))) { amount = parseInt(m[1]) + parseInt(m[2]) / parseInt(m[3]); rest = rest.slice(m[0].length); }
+    else if ((m = rest.match(/^(\d+)\s*\/\s*(\d+)/))) { amount = parseInt(m[1]) / parseInt(m[2]); rest = rest.slice(m[0].length); }
+    else if ((m = rest.match(/^(\d+(?:\.\d+)?)/))) { amount = parseFloat(m[1]); rest = rest.slice(m[0].length); }
+    else if ((m = rest.match(/^(un|uno|una|mezzo|mezza|due|tre)\b/i))) {
+      amount = /^mezz/i.test(m[1]) ? 0.5 : (m[1].toLowerCase() === 'due' ? 2 : (m[1].toLowerCase() === 'tre' ? 3 : 1));
+      rest = rest.slice(m[0].length);
     }
-
-    // Rimuovi preposizioni e punteggiatura iniziale ("di", "d'", "a")
     rest = rest.replace(/^[\s,'’]+/, '').replace(/^(di|d'|de|a|da)\s+/i, '').trim();
-
-    // 5) Riconoscimento unità di misura
     let unit = null;
-    m = rest.match(UNIT_RE);
-    if (m) { unit = UNIT_MAP[m[0].toLowerCase()]; rest = rest.slice(m[0].length).replace(/^[\s,'’]+/, '').trim(); }
-    else { unit = 'pezzi'; }
-
-    // Normalizza spazi (per "farina  00")
-    rest = rest.replace(/\s+/g, ' ').trim();
+    if ((m = rest.match(UNIT_RE))) { unit = UNIT_MAP[m[0].toLowerCase()]; rest = rest.slice(m[0].length).replace(/^[\s,'’]+/, '').trim(); }
+    else unit = 'pezzi';
+    rest = rest.replace(/^[\s,'’]+/, '').replace(/^(di|d'|de|a|da)\s+/i, '').replace(/\s+/g, ' ').trim();
     return { amount, unit, name: rest || unit };
   }
 
   /* ---------- 2.1 GEOMETRIA DEI CONTENITORI ---------- */
-  const H_DEFAULT = 5; // cm, se h non specificata
-
-  /** volumeOfPan — cilindro: π·(d/2)²·h | parallelepipedo: l·w·h */
+  const H_DEFAULT = 5;
   function volumeOfPan(shape, dims) {
     const h = (dims.h && dims.h > 0) ? dims.h : H_DEFAULT;
     if (shape === 'round') { const r = dims.d / 2; return Math.PI * r * r * h; }
-    return dims.l * dims.w * h; // rect
+    return dims.l * dims.w * h;
   }
-
-  /** areaOfPan — per stimare lo spessore effettivo (V/A) quando serve */
   function areaOfPan(shape, dims) {
     if (shape === 'round') { const r = dims.d / 2; return Math.PI * r * r; }
     return dims.l * dims.w;
   }
-
-  /** effectiveThickness — spessore del cibo: usa h dichiarata, altrimenti V/A */
   function effectiveThickness(shape, dims) {
     if (dims.h && dims.h > 0) return dims.h;
     return volumeOfPan(shape, dims) / areaOfPan(shape, dims);
   }
 
-  /* ---------- CATEGORIE DI NON-SCALABILITÀ (2.3) ---------- */
-  const NON_SCALABLE = {
-    leavening: {
-      match: ['lievito','bicarbonato','soda','tartaro','ammoniaca','cream'],
-      desc: 'Agente lievitante',
-      tip: 'saturazione: oltre F=2 si applica la curva attenuata F^0.75'
-    },
-    spice: {
-      match: ['peperoncino','noce moscata','pepe','cayenna','zenzero','curcuma','chiodi','cardamomo','pimento','paprika'],
-      desc: 'Spezia forte',
-      tip: 'curva logaritmica 1+ln(F): evita la saturazione del sapore'
-    },
-    hydration: {
-      match: ['acqua','latte','brodo','panna','vino','birra','siero'],
-      desc: 'Liquido di idratazione',
-      tip: '−0,5% cumulativo per ogni F>3 (minore evaporazione superficiale)'
-    }
-  };
-
-  function matchCategory(name, list) {
-    const n = name.toLowerCase();
-    return list.some(k => n.includes(k));
+  /* ---------- 4. REGOLE PERSONALIZZABILI (LA MIA DISPENSA INTELLIGENTE) ---------- */
+  function defaultRules() {
+    return {
+      leavening: { keywords: ['lievito','bicarbonato','soda','tartaro','ammoniaca','cream'], exp: 0.75, threshold: 2 },
+      spice:     { keywords: ['peperoncino','noce moscata','pepe','cayenna','zenzero','curcuma','chiodi','cardamomo','pimento','paprika'] },
+      hydration: { keywords: ['acqua','latte','brodo','panna','vino','birra','siero'], reduction: 0.005, threshold: 3 },
+      egg: { whole: 50, white: 30, yolk: 20 },
+      custom: [] // { keyword, category: 'leavening'|'spice'|'hydration', exp? }
+    };
   }
 
-  /** Se l'ingrediente è un uovo intero/albume/tuorlo → split a precisione industriale */
+  function matchKeywords(name, keywords) {
+    const n = name.toLowerCase();
+    return (keywords || []).some(k => n.includes(k.toLowerCase()));
+  }
+
+  /** Assegna la categoria a un ingrediente, consultando prima le regole custom. */
+  function categoryOf(name, rules) {
+    const n = name.toLowerCase();
+    for (const c of rules.custom || []) {
+      if (n.includes(c.keyword.toLowerCase())) return { category: c.category, custom: true, exp: c.exp };
+    }
+    if (matchKeywords(n, rules.leavening.keywords)) return { category: 'leavening' };
+    if (matchKeywords(n, rules.spice.keywords)) return { category: 'spice' };
+    if (matchKeywords(n, rules.hydration.keywords)) return { category: 'hydration' };
+    return null;
+  }
+
   function isEggIngredient(ing) {
     return ing.unit === 'uova' || ing.unit === 'albume' || ing.unit === 'tuorlo' || /uova?|albume|tuorlo/i.test(ing.name);
   }
-  const EGG_GRAM = { uova: 50, albume: 30, tuorlo: 20 }; // uovo medio intero senza guscio
 
-  /**
-   * 2.2 EGG FRACTIONING — algoritmo di split:
-   *   frac ≤ 0.2  → arrotonda per difetto (elimina la frazione)
-   *   frac ≥ 0.8  → arrotonda per eccesso (+1 uovo intero)
-   *   0.3–0.7     → converte la frazione in grammi esatti + istruzione testuale
-   */
-  function scaleEggs(linearCount, eggType) {
-    const whole = Math.floor(linearCount);
-    const frac = linearCount - whole;
-    const gr = EGG_GRAM[eggType] || 50;
-    if (frac <= 0.2) return { value: whole, text: `${whole} ${eggType === 'uova' ? 'uova' : eggType}`, note: 'frazione ≤ 0.2 → arrotondata per difetto' };
-    if (frac >= 0.8) return { value: whole + 1, text: `${whole + 1} ${eggType === 'uova' ? 'uova' : eggType}`, note: 'frazione ≥ 0.8 → arrotondata per eccesso (+1)' };
-    const grams = Math.round(frac * gr);
-    const unitTxt = eggType === 'uova' ? 'uovo sbattuto' : eggType;
-    return { value: linearCount, text: `${whole} ${eggType === 'uova' ? 'uova intere' : eggType} + ${grams}g di ${unitTxt}`, note: `split industriale: frazione 0.${Math.round(frac*10)} → ${grams}g` };
+  /* ---------- FORMULE NON LINEARI (2.3) — parametrizzate dalle regole ---------- */
+  function scaleLeavening(orig, F, r) {
+    if (F <= r.threshold) return { q: orig * F, note: `lineare (F≤${r.threshold})` };
+    return { q: orig * Math.pow(F, r.exp), note: `attenuata F^${r.exp} (F=${F.toFixed(2)}) → ${(Math.pow(F, r.exp) / F * 100).toFixed(0)}% del valore lineare` };
   }
-
-  /* ---------- FORMULE NON LINEARI (2.3) ---------- */
-  /** Agenti lievitanti: lineare fino a F=2, poi attenuazione F^0.75 */
-  function scaleLeavening(orig, F) {
-    if (F <= 2) return { q: orig * F, note: 'lineare (F≤2)' };
-    return { q: orig * Math.pow(F, 0.75), note: `attenuata F^0.75 (F=${F.toFixed(2)}) → ${(Math.pow(F,0.75)/F*100).toFixed(0)}% del valore lineare` };
-  }
-
-  /** Sale & spezie forti: curva logaritmica — impedisce saturazione del sapore */
   function scaleSpice(orig, F) {
-    return { q: orig * (1 + Math.log(F)), note: `curva logaritmica 1+ln(F) → ${((1+Math.log(F))/F*100).toFixed(0)}% del valore lineare` };
+    return { q: orig * (1 + Math.log(F)), note: `curva logaritmica 1+ln(F) → ${((1 + Math.log(F)) / F * 100).toFixed(0)}% del valore lineare` };
   }
-
-  /** Liquidi di idratazione: −0,5% cumulativo per ogni unità di F oltre 3 */
-  function scaleHydration(orig, F) {
+  function scaleHydration(orig, F, r) {
     let q = orig * F;
-    if (F > 3) {
-      const reduction = Math.pow(0.995, F - 3); // 0,5% cumulativo per F>3
+    if (F > r.threshold) {
+      const reduction = Math.pow(1 - r.reduction, F - r.threshold);
       q = q * reduction;
       return { q, note: `idratazione ridotta del ${((1 - reduction) * 100).toFixed(1)}% (F=${F.toFixed(2)})` };
     }
-    return { q, note: 'lineare (F≤3)' };
+    return { q, note: `lineare (F≤${r.threshold})` };
+  }
+
+  /* 2.2 EGG FRACTIONING — split a precisione industriale (pesi regolabili) */
+  function scaleEggs(linearCount, eggType, egg) {
+    const whole = Math.floor(linearCount);
+    const frac = linearCount - whole;
+    const gr = egg[eggType] || egg.whole;
+    const label = eggType === 'uova' ? 'uova' : eggType;
+    if (frac <= 0.2) return { value: whole, text: `${whole} ${label}`, note: 'frazione ≤ 0.2 → arrotondata per difetto' };
+    if (frac >= 0.8) return { value: whole + 1, text: `${whole + 1} ${label}`, note: 'frazione ≥ 0.8 → arrotondata per eccesso (+1)' };
+    const grams = Math.round(frac * gr);
+    const unitTxt = eggType === 'uova' ? 'uovo sbattuto' : eggType;
+    return { value: linearCount, text: `${whole} ${eggType === 'uova' ? 'uova intere' : eggType} + ${grams}g di ${unitTxt}`, note: `split industriale: frazione 0.${Math.round(frac * 10)} → ${grams}g` };
   }
 
   /* ---------- MOTORE PRINCIPALE DI RIDIMENSIONAMENTO ---------- */
-  function scaleIngredient(ing, F, locks) {
-    const locked = locks.some(l => ing.name.toLowerCase().includes(l.toLowerCase()));
-    if (locked) return { ...ing, scaled: ing.amount, factor: 1, locked: true, note: '🔒 Dispensa limitata: quantità originale invariata' };
+  function scaleIngredient(ing, F, rules, pantry) {
+    const constraint = pantry.find(p => ing.name.toLowerCase().includes(p.name.toLowerCase()));
+    if (constraint) {
+      if (constraint.lock) {
+        return { ...ing, scaled: ing.amount, factor: 1, locked: true, note: '🔒 Dispensa limitata: quantità originale invariata' };
+      }
+      // limitato dal massimo disponibile (converte la disponibilità nell'unità dell'ingrediente)
+      const capBase = baseAmount(constraint.max, constraint.unit);
+      const perIngUnit = baseAmount(1, ing.unit);
+      let capInIng = capBase / (perIngUnit || 1);
+      if (isEggIngredient(ing) && (constraint.unit === 'g' || constraint.unit === 'kg')) {
+        const eggWeight = rules.egg[ing.unit] || rules.egg.whole;
+        capInIng = capBase / eggWeight;
+      }
+      const scaledQ = scaledAmount(ing, F, rules);
+      const maxQ = Math.min(scaledQ, capInIng);
+      const limited = maxQ < scaledQ - 1e-9;
+      return { ...ing, scaled: maxQ, factor: maxQ / ing.amount, limited, note: limited ? `📦 dispensa: hai max ${fmtG(capInIng)} ${ing.unit} — quantità adattata` : null };
+    }
 
     if (isEggIngredient(ing)) {
-      const r = scaleEggs(ing.amount * F, ing.unit);
+      const r = scaleEggs(ing.amount * F, ing.unit, rules.egg);
       return { ...ing, scaled: r.value, eggText: r.text, factor: F, note: r.note };
     }
 
-    if (matchCategory(ing.name, NON_SCALABLE.leavening.match)) {
-      const r = scaleLeavening(ing.amount, F);
-      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `${NON_SCALABLE.leavening.desc} — ${r.note}` };
+    const cat = categoryOf(ing.name, rules);
+    if (cat && cat.category === 'leavening') {
+      const r = scaleLeavening(ing.amount, F, rules.leavening);
+      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `Agente lievitante — ${r.note}${cat.custom ? ' (regola personalizzata)' : ''}` };
     }
-    if (matchCategory(ing.name, NON_SCALABLE.spice.match)) {
+    if (cat && cat.category === 'spice') {
       const r = scaleSpice(ing.amount, F);
-      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `${NON_SCALABLE.spice.desc} — ${r.note}` };
+      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `Spezia forte — ${r.note}${cat.custom ? ' (regola personalizzata)' : ''}` };
     }
-    if (matchCategory(ing.name, NON_SCALABLE.hydration.match)) {
-      const r = scaleHydration(ing.amount, F);
-      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `${NON_SCALABLE.hydration.desc} — ${r.note}` };
+    if (cat && cat.category === 'hydration') {
+      const r = scaleHydration(ing.amount, F, rules.hydration);
+      return { ...ing, scaled: r.q, factor: r.q / ing.amount, note: `Liquido di idratazione — ${r.note}${cat.custom ? ' (regola personalizzata)' : ''}` };
     }
     return { ...ing, scaled: ing.amount * F, factor: F, note: null };
   }
 
+  /** quantità scalata di un ingrediente per un dato F (senza vincoli dispensa) */
+  function scaledAmount(ing, F, rules) {
+    if (isEggIngredient(ing)) return ing.amount * F;
+    const cat = categoryOf(ing.name, rules);
+    if (cat && cat.category === 'leavening') return scaleLeavening(ing.amount, F, rules.leavening).q;
+    if (cat && cat.category === 'spice') return scaleSpice(ing.amount, F).q;
+    if (cat && cat.category === 'hydration') return scaleHydration(ing.amount, F, rules.hydration).q;
+    return ing.amount * F;
+  }
+
+  /* ---------- FATTORE MASSIMO AMMESSO DALLA DISPENSA (inversione formule) ---------- */
+  function maxFactorFor(ing, item, rules) {
+    if (item.lock) return 1;
+    if (item.max == null) return Infinity;
+    if (isEggIngredient(ing)) {
+      if (item.unit === 'g' || item.unit === 'kg') {
+        const eggWeight = rules.egg[ing.unit] || rules.egg.whole;
+        const gramsNeeded = ing.amount * eggWeight;
+        return baseAmount(item.max, item.unit) / gramsNeeded;
+      }
+      return item.max / ing.amount; // conteggio uova (o auto)
+    }
+    const baseOrig = baseAmount(ing.amount, ing.unit);
+    const baseMax = baseAmount(item.max, item.unit);
+    if (!baseOrig) return Infinity;
+    const ratio = baseMax / baseOrig;
+    const cat = categoryOf(ing.name, rules);
+    if (cat && cat.category === 'leavening') {
+      const r = rules.leavening;
+      const thrQ = Math.pow(r.threshold, r.exp); // quantità raggiunta con F=threshold
+      return ratio <= thrQ ? Math.min(ratio, r.threshold) : Math.pow(ratio, 1 / r.exp);
+    }
+    if (cat && cat.category === 'spice') return Math.exp(ratio - 1); // inverti 1+ln(F)
+    if (cat && cat.category === 'hydration') {
+      const r = rules.hydration;
+      let lo = 1, hi = 1000;
+      for (let i = 0; i < 60; i++) {
+        const mid = (lo + hi) / 2;
+        const val = baseOrig * mid * Math.pow(1 - r.reduction, Math.max(0, mid - r.threshold));
+        if (val < baseMax) lo = mid; else hi = mid;
+      }
+      return lo;
+    }
+    return ratio; // lineare
+  }
+
+  function unitFamily(u) {
+    if (['g', 'kg'].includes(u)) return 'mass';
+    if (['ml', 'l', 'cl', 'dl', 'tazza', 'cucchiaio', 'cucchiaino'].includes(u)) return 'volume';
+    return 'count';
+  }
+
+  /* ---------- CONVERSIONI IN TAZZE/CUCCHIAI (misure senza bilancia) ---------- */
+  const CUP_GRAMS = { 'farina': 120, 'zucchero': 200, 'zucchero di canna': 200, 'burro': 220, 'cacao': 100, 'mandorle': 90, 'farina di mais': 140, 'riso': 190, 'fiocchi': 90, 'yogurt': 240, 'ricotta': 240, 'olio': 210 };
+  const SPOON_GRAMS = { 'farina': 8, 'zucchero': 12, 'zucchero di canna': 12, 'cacao': 6, 'burro': 14, 'miele': 21, 'olio': 13.5, 'sale': 15, 'farina di mais': 9 };
+  const TSP_GRAMS = { 'zucchero': 5, 'sale': 5, 'lievito': 4, 'bicarbonato': 4, 'cacao': 3 };
+  const ML_CUP = 240, ML_TBSP = 15, ML_TSP = 5;
+
+  /** baseAmount — converte una quantità nella sua unità di base (grammi, ml o conteggio). */
+  function baseAmount(value, unit) {
+    switch (unit) {
+      case 'kg': return value * 1000;
+      case 'l': return value * 1000;
+      case 'cl': return value * 10;
+      case 'dl': return value * 100;
+      case 'tazza': return value * ML_CUP;
+      case 'cucchiaio': return value * ML_TBSP;
+      case 'cucchiaino': return value * ML_TSP;
+      case 'g': case 'ml': case 'uova': case '': case 'auto': case 'pezzi': default: return value;
+    }
+  }
+
+  function conversionSuffix(ing, qty, unit) {
+    const n = ing.name.toLowerCase();
+    const find = table => Object.keys(table).find(k => n.includes(k));
+    if (unit === 'g' || unit === 'kg') {
+      const grams = unit === 'kg' ? qty * 1000 : qty;
+      if (grams < 3) return null;
+      const cup = find(CUP_GRAMS);
+      if (cup) {
+        const cups = grams / CUP_GRAMS[cup];
+        if (cups >= 1) return `≈ ${fmtNum(cups)} tazze`;
+        const tbsp = grams / SPOON_GRAMS[cup];
+        return tbsp >= 1 ? `≈ ${fmtNum(tbsp)} cucchiai` : `≈ ${fmtNum(grams / (TSP_GRAMS[cup] || 5))} cucchiaini`;
+      }
+      const tbsp = find(SPOON_GRAMS);
+      if (tbsp) { const t = grams / SPOON_GRAMS[tbsp]; return t >= 1 ? `≈ ${fmtNum(t)} cucchiai` : `≈ ${fmtNum(grams / (TSP_GRAMS[tbsp] || 5))} cucchiaini`; }
+      return null;
+    }
+    if (unit === 'ml' || unit === 'l') {
+      const ml = unit === 'l' ? qty * 1000 : qty;
+      if (ml < 5) return null;
+      const cups = ml / ML_CUP;
+      if (cups >= 1) return `≈ ${fmtNum(cups)} tazze`;
+      const tbsp = ml / ML_TBSP;
+      if (tbsp >= 1) return `≈ ${fmtNum(tbsp)} cucchiai`;
+      return `≈ ${fmtNum(ml / ML_TSP)} cucchiaini`;
+    }
+    return null;
+  }
+
   /* ---------- 5. THERMODYNAMIC BAKING ENGINE ---------- */
-  /**
-   * estimateBaking — stima variazioni di tempo e temperatura.
-   * Spessore maggiore:  +15% tempo per ogni cm extra, −10°C per cm.
-   * Spessore minore:    −20% tempo per ogni cm, +5°C per cm.
-   */
   function estimateBaking(baseMin, baseC, thickOrig, thickTarget) {
-    const delta = thickTarget - thickOrig; // cm
+    const delta = thickTarget - thickOrig;
     if (delta > 0.1) {
       const time = baseMin * (1 + 0.15 * delta);
       const temp = baseC - 10 * delta;
-      return { time, temp, delta, note: `Impasto più spesso (+${delta.toFixed(1)} cm): tempo +${(0.15*delta*100).toFixed(0)}% e forno −${(10*delta).toFixed(0)}°C per non bruciare l'esterno lasciando l'interno crudo.` };
+      return { time, temp, delta, note: `Impasto più spesso (+${delta.toFixed(1)} cm): tempo +${(0.15 * delta * 100).toFixed(0)}% e forno −${(10 * delta).toFixed(0)}°C per non bruciare l'esterno lasciando l'interno crudo.` };
     }
     if (delta < -0.1) {
       const m = -delta;
       const time = Math.max(5, baseMin * (1 - 0.20 * m));
       const temp = baseC + 5 * m;
-      return { time, temp, delta, note: `Impasto più sottile (−${m.toFixed(1)} cm): tempo −${(0.20*m*100).toFixed(0)}% e forno +${(5*m).toFixed(0)}°C.` };
+      return { time, temp, delta, note: `Impasto più sottile (−${m.toFixed(1)} cm): tempo −${(0.20 * m * 100).toFixed(0)}% e forno +${(5 * m).toFixed(0)}°C.` };
     }
     return { time: baseMin, temp: baseC, delta: 0, note: 'Spessore invariato: mantieni tempo e temperatura originali.' };
   }
@@ -572,15 +755,19 @@
 
   /* ---------- DOM REFS ---------- */
   const $ = id => document.getElementById(id);
-  const recipeText = $('recipeText'), ingList = $('ingList'), notesBox = $('notesBox');
+  const recipeText = $('recipeText'), ingList = $('ingList'), notesBox = $('notesBox'), warnBox = $('warnBox');
   const factorBadge = $('factorBadge'), geoFactorLabel = $('geoFactorLabel'), geoDetail = $('geoDetail');
-  const comboFactorLabel = $('comboFactorLabel'), servFactorLabel = $('servFactorLabel'), ingCount = $('ingCount');
+  const comboFactorLabel = $('comboFactorLabel'), comboDetail = $('comboDetail'), servFactorLabel = $('servFactorLabel'), ingCount = $('ingCount');
   const origVolLabel = $('origVolLabel'), tgtVolLabel = $('tgtVolLabel');
   const bakeTimeOut = $('bakeTimeOut'), bakeTempOut = $('bakeTempOut'), bakeNote = $('bakeNote');
 
   const state = {
     origShape: 'round', targetShape: 'round',
-    locks: [], steps: [], hfIndex: 0
+    pantry: [],          // { id, name, max (number|null), unit, lock }
+    rules: defaultRules(),
+    saved: [],           // { id, name, ts, data }
+    steps: [], hfIndex: 0,
+    voiceEnabled: false, speakEnabled: false
   };
 
   /* ---------- LETTURA INPUT ---------- */
@@ -597,64 +784,103 @@
   }
 
   /* ---------- RENDER: CORE ---------- */
+  let lastResults = [], lastF = 1, lastFreq = 1;
+
   function recompute() {
     const origDims = getPanDims('orig'), tgtDims = getPanDims('target');
-
     const v0 = volumeOfPan(state.origShape, origDims);
     const v1 = volumeOfPan(state.targetShape, tgtDims);
     const Fgeo = v1 / v0;
-
     const s0 = num('servOrig') || 1, s1 = num('servTgt') || 1;
     const Fserv = s1 / s0;
-    const F = Fgeo * Fserv;
+    const Frequested = Fgeo * Fserv;
 
-    // Etichette volumi
-    origVolLabel.textContent = `V₀ = ${state.origShape === 'round' ? `π·(${origDims.d/2})²·${origDims.h||5}` : `${origDims.l}·${origDims.w}·${origDims.h||5}`} = ${fmtNum(v0,1)} cm³`;
-    tgtVolLabel.textContent = `V₁ = ${state.targetShape === 'round' ? `π·(${tgtDims.d/2})²·${tgtDims.h||5}` : `${tgtDims.l}·${tgtDims.w}·${tgtDims.h||5}`} = ${fmtNum(v1,1)} cm³`;
-
-    // Badge fattori
-    factorBadge.textContent = `F = ${fmtNum(F)}×`;
-    geoFactorLabel.textContent = `${fmtNum(Fgeo)}×`;
-    geoDetail.textContent = `V₁/V₀ = ${fmtNum(v1,0)}/${fmtNum(v0,0)} cm³`;
-    comboFactorLabel.textContent = `${fmtNum(F)}×`;
-    servFactorLabel.textContent = `${fmtNum(Fserv)}×`;
-
-    // Parsing ricetta
+    // Vincoli della dispensa → F applicato
     const lines = recipeText.value.split('\n').map(l => l.trim()).filter(Boolean);
     const ingredients = lines.map(parseIngredientLine).filter(Boolean);
-    const results = ingredients.map(ing => scaleIngredient(ing, F, state.locks));
 
-    // Popola datalist per suggerimenti di blocco
+    let Fapplied = Frequested;
+    const limits = [];
+    for (const item of state.pantry) {
+      const matches = ingredients.filter(ing => ing.name.toLowerCase().includes(item.name.toLowerCase()));
+      if (!matches.length) continue;
+      for (const ing of matches) {
+        const fm = maxFactorFor(ing, item, state.rules);
+        if (fm < Fapplied - 1e-9) { Fapplied = fm; limits.length = 0; }
+        if (Math.abs(fm - Fapplied) < 1e-9) limits.push({ item, ing, fm });
+      }
+    }
+    if (limits.length && Fapplied >= Frequested - 1e-9) limits.length = 0;
+
+    // Scala con il fattore applicato
+    const results = ingredients.map(ing => scaleIngredient(ing, Fapplied, state.rules, state.pantry));
+    lastResults = results; lastF = Fapplied; lastFreq = Frequested;
+
+    // Etichette volumi
+    origVolLabel.textContent = `V₀ = ${state.origShape === 'round' ? `π·(${origDims.d / 2})²·${origDims.h || 5}` : `${origDims.l}·${origDims.w}·${origDims.h || 5}`} = ${fmtNum(v0, 1)} cm³`;
+    tgtVolLabel.textContent = `V₁ = ${state.targetShape === 'round' ? `π·(${tgtDims.d / 2})²·${tgtDims.h || 5}` : `${tgtDims.l}·${tgtDims.w}·${tgtDims.h || 5}`} = ${fmtNum(v1, 1)} cm³`;
+
+    factorBadge.textContent = `F = ${fmtNum(Fapplied)}×`;
+    geoFactorLabel.textContent = `${fmtNum(Fgeo)}×`;
+    geoDetail.textContent = `V₁/V₀ = ${fmtNum(v1, 0)}/${fmtNum(v0, 0)} cm³`;
+    comboFactorLabel.textContent = `${fmtNum(Fapplied)}×`;
+    comboDetail.textContent = Fapplied < Frequested - 1e-9
+      ? `richiesto ${fmtNum(Frequested)}× · limitato dalla dispensa`
+      : `richiesto ${fmtNum(Frequested)}× · porzioni × geo`;
+    servFactorLabel.textContent = `${fmtNum(Fserv)}×`;
+
     $('ingrList').innerHTML = [...new Set(ingredients.map(i => i.name))].map(n => `<option value="${escapeHtml(n)}">`).join('');
 
     renderList(results);
-    renderNotes(results, F);
+    renderNotes(results, Fapplied);
+    renderWarn(limits, Frequested, Fapplied);
     renderBaking(origDims, tgtDims);
-    buildSteps(results, F);
+    buildSteps(results, Fapplied);
+    renderRulesDetected();
     persist();
   }
 
   function renderList(results) {
     ingCount.textContent = `${results.length} ingredienti`;
     ingList.innerHTML = results.map(r => {
-      const display = r.eggText
-        ? r.eggText
-        : `${fmtG(r.scaled)} ${r.unit}`;
+      const display = r.eggText ? r.eggText : `${fmtG(r.scaled)} ${r.unit}`;
       const isLong = display.length > 22;
-      const lockChip = r.locked ? `<span class="chip bg-error/10 text-error ml-1">🔒 bloccato</span>` : '';
+      const conv = r.eggText ? null : conversionSuffix(r, r.scaled, r.unit);
+      const chips = [];
+      if (r.locked) chips.push('<span class="chip bg-error/10 text-error ml-1">🔒 bloccato</span>');
+      if (r.limited) chips.push(`<span class="chip bg-error/10 text-error ml-1">📦 max ${fmtG(r.scaled)} ${r.unit}</span>`);
       return `<div class="ing-row">
         <div class="ing-name">
           <span class="font-semibold text-[15px] capitalize">${escapeHtml(r.name)}</span>
-          ${lockChip}
+          ${chips.join('')}
           ${r.note && !r.locked ? `<div class="text-[11px] text-[#6E6A63] mt-0.5">${escapeHtml(r.note)}</div>` : ''}
         </div>
-        <div class="ing-value font-num font-bold text-primary text-lg ${isLong ? 'is-long' : ''}">${escapeHtml(display)}</div>
+        <div class="ing-value font-num font-bold text-primary text-lg ${isLong ? 'is-long' : ''}">
+          ${escapeHtml(display)}
+          ${conv ? `<div class="ing-alt">${escapeHtml(conv)}</div>` : ''}
+        </div>
       </div>`;
     }).join('') || `<div class="text-sm text-[#6E6A63] py-4 text-center">Inserisci almeno un ingrediente.</div>`;
   }
 
+  function renderWarn(limits, Frequested, Fapplied) {
+    if (limits.length && Fapplied < Frequested - 1e-9) {
+      const items = limits.map(l => `${l.ing.name} (hai ${fmtG(l.item.max)} ${l.item.unit})`).join(', ');
+      warnBox.className = 'segment border-[#FBE3D8] bg-[#FFEFEB]';
+      warnBox.innerHTML = `<div class="segment-title !text-error mb-1">⚠️ Dispensa limitata</div>
+        <p class="text-[13px] leading-relaxed">
+          Attenzione: hai solo <b>${items}</b>. Il fattore di scala è limitato a
+          <b class="font-num">${fmtNum(Fapplied)}×</b> invece dei <b class="font-num">${fmtNum(Frequested)}×</b> richiesti.
+          Aumenta la disponibilità o riduci le porzioni/teglia per ottenere l'intera dose.
+        </p>`;
+    } else {
+      warnBox.className = 'hidden';
+      warnBox.innerHTML = '';
+    }
+  }
+
   function renderNotes(results, F) {
-    const critical = results.filter(r => !r.locked && r.note && !isEggIngredient(r));
+    const critical = results.filter(r => !r.locked && !r.limited && r.note && !isEggIngredient(r));
     const eggs = results.filter(r => !r.locked && isEggIngredient(r));
     let html = '';
     if (eggs.length) {
@@ -685,18 +911,128 @@
     const r = estimateBaking(baseMin, baseC, t0, t1);
     bakeTimeOut.textContent = `${fmtNum(Math.round(r.time))} min`;
     bakeTempOut.textContent = `${fmtNum(Math.round(r.temp))} °C`;
-    bakeNote.textContent = r.note + (r.delta !== 0 ? ` Spessore: ${fmtNum(t0,1)} cm → ${fmtNum(t1,1)} cm.` : ` Spessore: ${fmtNum(t0,1)} cm.`);
+    bakeNote.textContent = r.note + (r.delta !== 0 ? ` Spessore: ${fmtNum(t0, 1)} cm → ${fmtNum(t1, 1)} cm.` : ` Spessore: ${fmtNum(t0, 1)} cm.`);
+  }
+
+  /* ---------- DISPENSA (PANTRY) ---------- */
+  let pantryId = 0;
+  function addPantry(name, amount, unit) {
+    name = (name || '').trim();
+    if (!name) return;
+    const numeric = amount !== '' && amount != null && isFinite(parseFloat(amount)) ? parseFloat(amount) : null;
+    const finalUnit = unit || 'auto';
+    if (numeric == null) {
+      if (state.pantry.some(p => p.lock && p.name.toLowerCase() === name.toLowerCase())) return;
+      state.pantry.push({ id: ++pantryId, name, max: null, unit: finalUnit, lock: true });
+    } else {
+      if (numeric <= 0) return;
+      state.pantry.push({ id: ++pantryId, name, max: numeric, unit: finalUnit, lock: false });
+    }
+    $('pantryName').value = ''; $('pantryAmount').value = ''; $('pantryUnit').value = '';
+    renderPantry();
+    recompute();
+  }
+  function removePantry(id) {
+    state.pantry = state.pantry.filter(p => p.id !== id);
+    renderPantry();
+    recompute();
+  }
+  function renderPantry() {
+    $('pantryList').innerHTML = state.pantry.map(p =>
+      `<span class="chip bg-error/10 text-error">${p.lock ? '🔒' : '📦'} ${escapeHtml(p.name)}${p.lock ? '' : `: max ${fmtG(p.max)} ${p.unit}`}
+        <button type="button" data-id="${p.id}" class="font-bold hover:opacity-70" aria-label="Rimuovi ${escapeHtml(p.name)}">✕</button></span>`
+    ).join('') || '<span class="text-[11px] text-[#6E6A63]">Nessun vincolo. Aggiungi ingredienti per bloccare o limitare le quantità.</span>';
+    $('pantryList').querySelectorAll('button').forEach(b => b.addEventListener('click', () => removePantry(+b.dataset.id)));
+  }
+
+  /* ---------- REGOLE UI ---------- */
+  function renderRulesDetected() {
+    const r = state.rules;
+    const detected = lastResults.map(ing => {
+      const cat = ing.locked || ing.limited ? null : categoryOf(ing.name, r);
+      return { name: ing.name, cat: cat ? cat.category : 'lineare' };
+    });
+    const detRows = [...new Map(detected.map(d => [d.name, d])).values()]
+      .map(d => `<div class="flex justify-between text-[12px] border-b border-dashed border-[#FBE3D8] py-1">
+        <span class="capitalize">${escapeHtml(d.name)}</span>
+        <span class="chip ${d.cat === 'lineare' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'}">${d.cat}</span></div>`).join('');
+    $('rulesDetected').innerHTML = detRows || '<div class="text-[11px] text-[#6E6A63]">Aggiungi ingredienti per vedere le categorie.</div>';
+  }
+
+  function renderRulesCustom() {
+    const customRows = (state.rules.custom || []).map((c, i) =>
+      `<div class="flex items-center gap-2 text-[12px]">
+        <span class="chip bg-secondary/10 text-secondary flex-1">${escapeHtml(c.keyword)} → ${c.category}${c.exp != null ? ` · exp ${c.exp}` : ''}</span>
+        <button type="button" data-ci="${i}" class="font-bold text-error hover:opacity-70" aria-label="Rimuovi regola">✕</button>
+      </div>`).join('');
+    $('rulesCustom').innerHTML = customRows || '<div class="text-[11px] text-[#6E6A63]">Nessuna regola personalizzata.</div>';
+    document.querySelectorAll('#rulesCustom [data-ci]').forEach(b => b.addEventListener('click', () => {
+      state.rules.custom.splice(+b.dataset.ci, 1);
+      recompute();
+      renderRulesUI();
+    }));
+  }
+
+  function renderRulesUI() {
+    const r = state.rules;
+    $('rulesBox').innerHTML = `
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="label" for="ruleExp">Lievito / bicarbonato: esponente (F^exp)</label>
+          <input id="ruleExp" class="input font-num" type="number" step="0.05" min="0.1" max="1" value="${r.leavening.exp}" /></div>
+        <div><label class="label" for="ruleThr">…oltre F=</label>
+          <input id="ruleThr" class="input font-num" type="number" step="0.5" min="1" max="10" value="${r.leavening.threshold}" /></div>
+        <div><label class="label" for="ruleRed">Idratazione: riduzione % oltre F=</label>
+          <input id="ruleRed" class="input font-num" type="number" step="0.1" min="0" max="10" value="${(r.hydration.reduction * 100).toFixed(1)}" /></div>
+        <div><label class="label" for="ruleThrH">…oltre F=</label>
+          <input id="ruleThrH" class="input font-num" type="number" step="0.5" min="1" max="10" value="${r.hydration.threshold}" /></div>
+        <div><label class="label" for="ruleWhole">Uovo intero (g)</label>
+          <input id="ruleWhole" class="input font-num" type="number" step="1" min="1" value="${r.egg.whole}" /></div>
+        <div><label class="label" for="ruleWhite">Albume (g)</label>
+          <input id="ruleWhite" class="input font-num" type="number" step="1" min="1" value="${r.egg.white}" /></div>
+      </div>
+      <div>
+        <div class="text-[12px] font-bold mb-1">Categoria rilevata nei tuoi ingredienti</div>
+        <div id="rulesDetected"></div>
+      </div>
+      <div>
+        <div class="text-[12px] font-bold mb-1">Regole personalizzate</div>
+        <div id="rulesCustom"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-2 mt-2 items-end">
+          <div><label class="label" for="ruleKeyword">Ingrediente</label><input id="ruleKeyword" class="input font-num" type="text" placeholder="es. lievito di birra" /></div>
+          <div><label class="label" for="ruleCat">Categoria</label>
+            <select id="ruleCat" class="input font-num"><option value="leavening">Lievitante</option><option value="spice">Spezia</option><option value="hydration">Idratazione</option></select></div>
+          <div><label class="label" for="ruleExpC">Exp (solo liev.)</label><input id="ruleExpC" class="input font-num" type="number" step="0.05" min="0.1" max="1.5" placeholder="0.75" /></div>
+          <button id="ruleAdd" class="btn-ghost px-3" type="button">＋ Aggiungi</button>
+        </div>
+      </div>`;
+
+    $('ruleExp').addEventListener('input', e => { state.rules.leavening.exp = parseFloat(e.target.value) || 0.75; recompute(); });
+    $('ruleThr').addEventListener('input', e => { state.rules.leavening.threshold = parseFloat(e.target.value) || 2; recompute(); });
+    $('ruleRed').addEventListener('input', e => { state.rules.hydration.reduction = (parseFloat(e.target.value) || 0) / 100; recompute(); });
+    $('ruleThrH').addEventListener('input', e => { state.rules.hydration.threshold = parseFloat(e.target.value) || 3; recompute(); });
+    $('ruleWhole').addEventListener('input', e => { state.rules.egg.whole = parseFloat(e.target.value) || 50; recompute(); });
+    $('ruleWhite').addEventListener('input', e => { state.rules.egg.white = parseFloat(e.target.value) || 30; recompute(); });
+    $('ruleAdd').addEventListener('click', () => {
+      const kw = $('ruleKeyword').value.trim();
+      if (!kw) return;
+      const exp = $('ruleExpC').value === '' ? null : parseFloat($('ruleExpC').value);
+      state.rules.custom.push({ keyword: kw, category: $('ruleCat').value, exp });
+      $('ruleKeyword').value = ''; $('ruleExpC').value = '';
+      recompute();
+      renderRulesUI();
+    });
+    renderRulesDetected();
+    renderRulesCustom();
   }
 
   /* ---------- HANDS-FREE STEPS ---------- */
-  function buildSteps(results) {
+  function buildSteps(results, F) {
     const steps = results.map(r => ({
-      label: r.unit === 'uova' || r.eggText ? 'Uova' : 'Ingrediente',
+      label: r.eggText ? 'Uova' : 'Ingrediente',
       name: r.name,
       value: r.eggText ? r.eggText.replace(/^(\d+)/, '$1') : `${fmtG(r.scaled)} ${r.unit}`,
       note: r.locked ? '🔒 quantità originale (dispensa limitata)' : (r.note || '')
     }));
-    // Aggiungi passo finale di cottura
     steps.push({
       label: 'Cottura', name: 'Inforna', value: `${bakeTimeOut.textContent} @ ${bakeTempOut.textContent}`, note: bakeNote.textContent
     });
@@ -711,10 +1047,11 @@
     $('hfStepLabel').textContent = s.label;
     const valEl = $('hfValue');
     valEl.textContent = s.value;
-    valEl.classList.toggle('long', s.value.length > 14); // font adattivo per testi lunghi (uova frazionate)
+    valEl.classList.toggle('long', s.value.length > 14);
     $('hfName').textContent = s.name;
     $('hfNote').textContent = s.note || '';
     $('hfProgress').style.width = `${((state.hfIndex + 1) / state.steps.length) * 100}%`;
+    if (state.speakEnabled) speak(`${s.name}. ${s.value}. ${s.note || ''}`.replace(/\s+/g, ' ').trim());
   }
 
   function openHands() {
@@ -733,10 +1070,105 @@
     document.body.style.overflow = '';
     document.querySelectorAll('header, main, footer').forEach(el => el.removeAttribute('inert'));
     document.querySelector('meta[name="theme-color"]').setAttribute('content', '#FAFAFA');
+    stopMic();
   }
   function hfStep(dir) {
     state.hfIndex = Math.max(0, Math.min(state.steps.length - 1, state.hfIndex + dir));
     renderHf();
+  }
+
+  /* ---------- VOCE (WEB SPEECH API) ---------- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognizer = null;
+
+  const WORD_NUM = { zero:0, un:1, uno:1, una:1, due:2, tre:3, quattro:4, cinque:5, sei:6, sette:7, otto:8, nove:9, dieci:10, undici:11, dodici:12 };
+
+  /** Parser dei comandi vocali (funzione pura, testabile). */
+  function parseVoiceCommand(text) {
+    const t = (' ' + text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ') + ' ').replace(/\s+/g, ' ');
+    const has = re => re.test(t);
+    if (has(/(chiudi|esci|stop|basta|annulla|torna alla ricetta|indietro tutto)/)) return { action: 'close' };
+    if (has(/(cottura|inforna|inforno|cuoci|forno|ultimo passo)/)) return { action: 'bake' };
+    if (has(/(avanti|prossimo|successivo|next|dopo|via|il prossimo passo)/)) return { action: 'next' };
+    if (has(/(indietro|precedente|prima|previous|back)/)) return { action: 'prev' };
+    let m = t.match(/(?:porta|metti|imposta|aumenta|alza|incrementa|riduci|abbassa|diminuisci).{0,20}?porzioni?\s+(?:a\s+|a\s*)(\d+|[a-zàèéìòù]+)/);
+    if (m) {
+      const n = WORD_NUM[m[1]] ?? parseInt(m[1], 10);
+      if (n) {
+        if (has(/(riduci|abbassa|diminuisci)/)) return { action: 'servings', value: n };
+        return { action: 'servings', value: n };
+      }
+    }
+    m = t.match(/(\d+|[a-zàèéìòù]+)\s+porzioni?/);
+    if (m) {
+      const n = WORD_NUM[m[1]] ?? parseInt(m[1], 10);
+      if (n) return { action: 'servings', value: n };
+    }
+    if (has(/(ripeti|dimmi|quale|cosa|mostra|leggi)/)) return { action: 'speak' };
+    return { action: 'unknown' };
+  }
+
+  function handleVoiceCommand(text) {
+    const cmd = parseVoiceCommand(text);
+    switch (cmd.action) {
+      case 'next': hfStep(1); break;
+      case 'prev': hfStep(-1); break;
+      case 'bake': state.hfIndex = state.steps.length - 1; renderHf(); break;
+      case 'close': closeHands(); break;
+      case 'servings': $('servTgt').value = cmd.value; recompute(); speak(`Porzioni impostate a ${cmd.value}.`); break;
+      case 'speak': {
+        const s = state.steps[state.hfIndex];
+        if (s) speak(`${s.name}. ${s.value}. ${s.note || ''}`.replace(/\s+/g, ' ').trim());
+        break;
+      }
+      default: speak('Comando non riconosciuto. Dì avanti, indietro, cottura, o imposta le porzioni.'); break;
+    }
+  }
+
+  function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'it-IT'; u.rate = 1; u.pitch = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const it = voices.find(v => /^it/i.test(v.lang));
+    if (it) u.voice = it;
+    window.speechSynthesis.speak(u);
+  }
+
+  function toggleMic() {
+    if (!SR) { toast('La sintesi/riconoscimento vocale non è supportato da questo browser.'); return; }
+    state.voiceEnabled = !state.voiceEnabled;
+    const mic = $('hfMic');
+    mic.classList.toggle('mic-listening', state.voiceEnabled);
+    mic.setAttribute('aria-pressed', state.voiceEnabled ? 'true' : 'false');
+    $('hfVoiceStatus').classList.toggle('hidden', !state.voiceEnabled);
+    if (state.voiceEnabled) { startRecognizer(); } else { stopRecognizer(); }
+  }
+  function startRecognizer() {
+    if (!SR) return;
+    try {
+      recognizer = new SR();
+      recognizer.lang = 'it-IT';
+      recognizer.continuous = true;
+      recognizer.interimResults = false;
+      recognizer.onresult = e => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          handleVoiceCommand(t);
+        }
+      };
+      recognizer.onerror = () => { state.voiceEnabled = false; $('hfMic').classList.remove('mic-listening'); $('hfVoiceStatus').classList.add('hidden'); };
+      recognizer.start();
+    } catch (e) { /* già attivo o non permesso */ }
+  }
+  function stopRecognizer() { if (recognizer) { try { recognizer.stop(); } catch (e) {} } recognizer = null; }
+  function stopMic() { state.voiceEnabled = false; stopRecognizer(); $('hfMic').classList.remove('mic-listening'); $('hfMic').setAttribute('aria-pressed', 'false'); $('hfVoiceStatus').classList.add('hidden'); }
+  function toggleSpeaker() {
+    state.speakEnabled = !state.speakEnabled;
+    $('hfSpeaker').setAttribute('aria-pressed', state.speakEnabled ? 'true' : 'false');
+    $('hfSpeaker').classList.toggle('!text-primary', state.speakEnabled);
+    toast(state.speakEnabled ? 'Lettura vocale attiva.' : 'Lettura vocale disattivata.');
   }
 
   /* ---------- SHAPE TOGGLE ---------- */
@@ -750,7 +1182,6 @@
       el.classList.toggle('hidden', state[el.dataset.pan + 'Shape'] !== el.dataset.shape);
     });
   }
-
   function bindShapeToggles() {
     document.querySelectorAll('.shape-toggle').forEach(grp => {
       grp.querySelectorAll('button').forEach(btn => {
@@ -763,90 +1194,329 @@
     });
   }
 
-  /* ---------- LOCK (DISPENSA LIMITATA) ---------- */
-  function addLock(name) {
-    name = name.trim();
-    if (!name || state.locks.some(l => l.toLowerCase() === name.toLowerCase())) return;
-    state.locks.push(name);
-    $('lockInput').value = '';
-    renderLocks();
+  /* ---------- ESEMPI DI RICETTE ---------- */
+  const EXAMPLES = {
+    torta: {
+      recipe: '250g di farina 00\n150g di zucchero\n3 uova\n120g di burro\n100ml di latte\n1 bustina di lievito chimico\n1/2 limone (scorza)\n1 pizzico di sale',
+      shape: { orig: 'round', target: 'round' },
+      dims: { orig: { d: 22, h: 5 }, tgt: { d: 26, h: 5 } },
+      serv: { o: 6, t: 8 }, bake: { time: 45, temp: 180 }
+    },
+    pancake: {
+      recipe: '200g di farina 00\n2 uova\n300ml di latte\n30g di zucchero\n1 cucchiaino di lievito chimico\n1 pizzico di sale\n20g di burro',
+      shape: { orig: 'round', target: 'rect' },
+      dims: { orig: { d: 24, h: 2 }, tgt: { l: 24, w: 18, h: 2 } },
+      serv: { o: 4, t: 6 }, bake: { time: 6, temp: 190 }
+    },
+    ciambellone: {
+      recipe: '350g di farina 00\n200g di zucchero\n3 uova\n150ml di olio di semi\n150ml di latte\n1 bustina di lievito chimico\n1 limone (scorza)\n1 pizzico di sale',
+      shape: { orig: 'round', target: 'round' },
+      dims: { orig: { d: 24, h: 6 }, tgt: { d: 28, h: 6 } },
+      serv: { o: 8, t: 10 }, bake: { time: 50, temp: 180 }
+    },
+    frolla: {
+      recipe: '300g di farina 00\n150g di burro\n100g di zucchero a velo\n2 tuorli\n1 uovo\n1 pizzico di sale\n1/2 bacca di vaniglia',
+      shape: { orig: 'rect', target: 'rect' },
+      dims: { orig: { l: 28, w: 20, h: 1 }, tgt: { l: 32, w: 24, h: 1 } },
+      serv: { o: 6, t: 8 }, bake: { time: 20, temp: 180 }
+    },
+    risotto: {
+      recipe: '320g di riso carnaroli\n1 cipolla\n100ml di vino bianco\n1l di brodo vegetale\n60g di burro\n80g di parmigiano\n1 pizzico di zafferano\nsale q.b.',
+      shape: { orig: 'rect', target: 'rect' },
+      dims: { orig: { l: 20, w: 20, h: 5 }, tgt: { l: 20, w: 20, h: 5 } },
+      serv: { o: 4, t: 8 }, bake: { time: 18, temp: 0 }
+    }
+  };
+  function applyExample(id) {
+    const ex = EXAMPLES[id];
+    if (!ex) return;
+    recipeText.value = ex.recipe;
+    state.origShape = ex.shape.orig; state.targetShape = ex.shape.target;
+    const setD = (prefix, d) => {
+      const o = { d: '', h: '', l: '', w: '' };
+      Object.entries(d).forEach(([k, v]) => { o[k] = String(v); });
+      const shape = prefix === 'orig' ? ex.shape.orig : ex.shape.target;
+      ['d', 'h', 'l', 'w'].forEach(k => {
+        const id = k === 'h' ? (shape === 'rect' ? prefix + 'H2' : prefix + 'H') : prefix + k.toUpperCase();
+        const el = $(id);
+        if (el) el.value = o[k];
+      });
+    };
+    setD('orig', ex.dims.orig); setD('tgt', ex.dims.tgt);
+    $('servOrig').value = ex.serv.o; $('servTgt').value = ex.serv.t;
+    $('bakeTime').value = ex.bake.time; $('bakeTemp').value = ex.bake.temp;
+    state.pantry = [];
+    renderPantry();
+    syncShapeUI();
+    recompute();
+    toast(`Esempio caricato: ${$('exampleSelect').selectedOptions[0].textContent.trim()}`);
+  }
+
+  /* ---------- SALVATAGGIO / ESPORTAZIONE / CONDIVISIONE ---------- */
+  const SAVED_KEY = 'pk-saved-v2';
+  const STORE_KEY = 'pk-state-v2';
+  function collectState(includeSaved) {
+    const s = {
+      r: recipeText.value,
+      o: readInputs(['origD', 'origH', 'origL', 'origW', 'origH2']),
+      t: readInputs(['tgtD', 'tgtH', 'tgtL', 'tgtW', 'tgtH2']),
+      s: readInputs(['servOrig', 'servTgt']),
+      b: readInputs(['bakeTime', 'bakeTemp']),
+      p: state.pantry,
+      sh: { orig: state.origShape, target: state.targetShape },
+      ru: state.rules
+    };
+    if (includeSaved) s.sv = state.saved;
+    return s;
+  }
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(collectState(false)));
+      localStorage.setItem(SAVED_KEY, JSON.stringify(state.saved));
+    } catch (e) { /* storage non disponibile */ }
+  }
+  function restore() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) {}
+    if (!d) return false;
+    if (typeof d.r === 'string') recipeText.value = d.r;
+    const apply = m => { if (!m) return; Object.keys(m).forEach(id => { const el = $(id); if (el) el.value = m[id]; }); };
+    apply(d.o); apply(d.t); apply(d.s); apply(d.b);
+    if (Array.isArray(d.p)) state.pantry = d.p;
+    if (d.sh) { if (['round', 'rect'].includes(d.sh.orig)) state.origShape = d.sh.orig; if (['round', 'rect'].includes(d.sh.target)) state.targetShape = d.sh.target; }
+    if (d.ru) state.rules = normalizeRules(d.ru);
+    try { const sv = JSON.parse(localStorage.getItem(SAVED_KEY)); if (Array.isArray(sv)) state.saved = sv; } catch (e) {}
+    return true;
+  }
+  function normalizeRules(r) {
+    const def = defaultRules();
+    const out = { ...def, ...r };
+    out.leavening = { ...def.leavening, ...(r.leavening || {}) };
+    out.spice = { ...def.spice, ...(r.spice || {}) };
+    out.hydration = { ...def.hydration, ...(r.hydration || {}) };
+    out.egg = { ...def.egg, ...(r.egg || {}) };
+    out.custom = Array.isArray(r.custom) ? r.custom : [];
+    return out;
+  }
+
+  function toast(msg) {
+    $('toastMsg').textContent = msg;
+    $('toast').classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => $('toast').classList.remove('show'), 2600);
+  }
+
+  function saveRecipe() {
+    $('saveRow').classList.remove('hidden');
+    $('saveName').focus();
+  }
+  function confirmSave() {
+    const name = $('saveName').value.trim() || `Ricetta ${state.saved.length + 1}`;
+    state.saved.unshift({ id: Date.now(), name, ts: Date.now(), data: collectState(false) });
+    state.saved = state.saved.slice(0, 20);
+    $('saveName').value = '';
+    $('saveRow').classList.add('hidden');
+    persist();
+    renderSaved();
+    toast(`💾 "${name}" salvata.`);
+  }
+  function renderSaved() {
+    $('savedCount').textContent = state.saved.length;
+    $('savedList').innerHTML = state.saved.length
+      ? state.saved.map((s, i) => `<div class="flex items-center gap-2 text-[13px]">
+          <span class="flex-1 min-w-0 truncate font-semibold">${escapeHtml(s.name)}</span>
+          <span class="text-[11px] text-[#6E6A63] font-num">${new Date(s.ts).toLocaleDateString('it-IT')}</span>
+          <button type="button" data-load="${i}" class="btn-ghost !py-1 !px-2 text-xs" title="Carica">↻</button>
+          <button type="button" data-del="${i}" class="btn-ghost !py-1 !px-2 text-xs text-error" title="Elimina">🗑</button>
+        </div>`).join('')
+      : '<div class="text-[12px] text-[#6E6A63]">Nessuna ricetta salvata. Premi 💾 Salva per conservarla.</div>';
+    $('savedList').querySelectorAll('[data-load]').forEach(b => b.addEventListener('click', () => loadSaved(+b.dataset.load)));
+    $('savedList').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { state.saved.splice(+b.dataset.del, 1); persist(); renderSaved(); }));
+  }
+  function loadSaved(i) {
+    const s = state.saved[i];
+    if (!s) return;
+    applyShareData(s.data);
+    toast(`Caricata "${s.name}".`);
+  }
+
+  function exportRecipe() {
+    const name = $('saveName').value.trim() || 'ricetta-adattata';
+    const lines = [
+      '=== ' + 'ProportionKitchen · Aiuto Cuoco — Ricetta adattata ===',
+      `Fattore applicato: ${fmtNum(lastF)}×` + (lastF < lastFreq - 1e-9 ? ` (richiesto ${fmtNum(lastFreq)}×, limitato dalla dispensa)` : ` (richiesto ${fmtNum(lastFreq)}×)`),
+      '',
+      'INGREDIENTI:',
+      ...lastResults.map(r => `- ${r.name}: ${r.eggText ? r.eggText : fmtG(r.scaled) + ' ' + r.unit}${r.locked ? ' (bloccato)' : ''}`),
+      '',
+      'COTTURA:',
+      `${bakeTimeOut.textContent} a ${bakeTempOut.textContent}`,
+      bakeNote.textContent,
+      '',
+      'Generato da https://aiuto-cuoco.vercel.app'
+    ].join('\n');
+    const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
+    downloadBlob(blob, name.replace(/[^\wàèéìòù -]/gi, '').trim() || 'ricetta', 'txt');
+    toast('📤 Ricetta esportata in formato .txt');
+  }
+  function exportJson() {
+    const name = $('saveName').value.trim() || 'ricetta-adattata';
+    const payload = JSON.stringify({ meta: { app: 'ProportionKitchen', version: 2, exported: new Date().toISOString() }, ...collectState(false) }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json;charset=utf-8' });
+    downloadBlob(blob, name.replace(/[^\wàèéìòù -]/gi, '').trim() || 'ricetta', 'json');
+    toast('📤 Ricetta esportata in formato .json');
+  }
+  function downloadBlob(blob, name, ext) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${name}.${ext}`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function shareLink() {
+    const data = collectState(false);
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = location.origin + location.pathname + '?d=' + encoded;
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('🔗 Link copiato negli appunti!')).catch(() => { prompt('Copia il link:', url); });
+  }
+  function readShare() {
+    const m = location.search.match(/[?&]d=([^&]+)/);
+    if (!m) return;
+    try {
+      const json = decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/'))));
+      applyShareData(JSON.parse(json));
+      history.replaceState({}, '', location.pathname);
+    } catch (e) { toast('Link non valido.'); }
+  }
+  function applyShareData(data) {
+    if (!data) return;
+    if (typeof data.r === 'string') recipeText.value = data.r;
+    const apply = m => { if (!m) return; Object.keys(m).forEach(id => { const el = $(id); if (el) el.value = m[id]; }); };
+    apply(data.o); apply(data.t); apply(data.s); apply(data.b);
+    if (Array.isArray(data.p)) state.pantry = data.p;
+    if (data.sh) { if (['round', 'rect'].includes(data.sh.orig)) state.origShape = data.sh.orig; if (['round', 'rect'].includes(data.sh.target)) state.targetShape = data.sh.target; }
+    if (data.ru) state.rules = normalizeRules(data.ru);
+    renderPantry();
+    syncShapeUI();
     recompute();
   }
-  function renderLocks() {
-    $('lockChips').innerHTML = state.locks.map((l, i) =>
-      `<span class="chip bg-error/10 text-error">🔒 ${escapeHtml(l)} <button type="button" data-idx="${i}" class="font-bold hover:opacity-70" aria-label="Rimuovi blocco ${escapeHtml(l)}">✕</button></span>`
-    ).join('');
-    $('lockChips').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { state.locks.splice(+b.dataset.idx, 1); renderLocks(); recompute(); }));
+
+  /* ---------- TOUR (ONBOARDING) ---------- */
+  const TOUR_STEPS = [
+    { sel: '[data-tour="recipe"]', title: '1. Incolla la tua ricetta', body: 'Incolla o scrivi gli ingredienti, uno per riga. Funziona con frazioni (1/2), decimali (1,5 kg) e persino "un pizzico di". Scegli anche una ricetta d\'esempio dal menu qui sopra.' },
+    { sel: '[data-tour="pan-orig"]', title: '2. Imposta la teglia', body: 'Scegli forma e dimensioni della teglia di partenza (a sinistra) e di quella di arrivo (al centro). Il fattore geometrico V₁/V₀ viene calcolato all\'istante.' },
+    { sel: '[data-tour="pantry"]', title: '3. Porzioni e dispensa', body: 'Regola le porzioni oppure dichiara cosa hai in dispensa: blocca un ingrediente o imposta una quantità massima. Il fattore di scala si adatterà da solo.' },
+    { sel: '[data-tour="output"]', title: '4. Leggi il risultato', body: 'Qui trovi le quantità ricalcolate, le note sui coefficienti non lineari e la stima di cottura. Salva, esporta o condividi con un link.' },
+    { sel: '[data-tour="hands"]', title: '5. Modalità Mani Sporche', body: 'Tocco l\'area centrale o usa i comandi vocali ("avanti", "cottura", "imposta le porzioni a 8") per seguire la preparazione senza toccare lo schermo.' }
+  ];
+  function startTour() {
+    tourIndex = 0;
+    $('tourOverlay').classList.remove('hidden');
+    $('tourOverlay').classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    renderTourStep();
+  }
+  function endTour(savePref) {
+    $('tourOverlay').classList.add('hidden');
+    $('tourOverlay').classList.remove('flex');
+    $('tourSpotlight').classList.add('hidden');
+    document.body.style.overflow = '';
+    if (savePref && $('tourDontShow').checked) { try { localStorage.setItem('pk-tour-done', '1'); } catch (e) {} }
+  }
+  let tourIndex = 0;
+  function renderTourStep() {
+    const s = TOUR_STEPS[tourIndex];
+    $('tourStep').textContent = `${tourIndex + 1} / ${TOUR_STEPS.length}`;
+    $('tourTitle').textContent = s.title;
+    $('tourBody').textContent = s.body;
+    $('tourPrev').disabled = tourIndex === 0;
+    $('tourNext').textContent = tourIndex === TOUR_STEPS.length - 1 ? 'Inizia!' : 'Avanti →';
+    const target = document.querySelector(s.sel);
+    const r = target ? target.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+    const spot = $('tourSpotlight');
+    spot.classList.remove('hidden');
+    spot.style.left = (r.left - 6) + 'px';
+    spot.style.top = (r.top - 6) + 'px';
+    spot.style.width = (r.width + 12) + 'px';
+    spot.style.height = (r.height + 12) + 'px';
   }
 
   /* ---------- HELPERS ---------- */
   function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-
-  /* ---------- PERSISTENZA LOCALE (riprendi dove eri) ---------- */
-  const STORE_KEY = 'pk-state-v1';
   const readInputs = ids => { const o = {}; ids.forEach(id => (o[id] = $(id).value)); return o; };
-  function collectState() {
-    return {
-      recipe: recipeText.value,
-      orig: readInputs(['origD', 'origH', 'origL', 'origW', 'origH2']),
-      tgt: readInputs(['tgtD', 'tgtH', 'tgtL', 'tgtW', 'tgtH2']),
-      serv: readInputs(['servOrig', 'servTgt']),
-      bake: readInputs(['bakeTime', 'bakeTemp']),
-      locks: state.locks,
-      shapes: { orig: state.origShape, target: state.targetShape }
-    };
-  }
-  function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify(collectState())); } catch (e) { /* storage non disponibile */ } }
-  function restore() {
-    let d = null;
-    try { d = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { /* niente da ripristinare */ }
-    if (!d) return false;
-    if (typeof d.recipe === 'string') recipeText.value = d.recipe;
-    const apply = m => { if (!m) return; Object.keys(m).forEach(id => { const el = $(id); if (el) el.value = m[id]; }); };
-    apply(d.orig); apply(d.tgt); apply(d.serv); apply(d.bake);
-    if (Array.isArray(d.locks)) state.locks = d.locks.filter(l => typeof l === 'string');
-    if (d.shapes && ['round', 'rect'].includes(d.shapes.orig)) state.origShape = d.shapes.orig;
-    if (d.shapes && ['round', 'rect'].includes(d.shapes.target)) state.targetShape = d.shapes.target;
-    return true;
-  }
 
   /* ---------- EVENT LISTENERS (real-time) ---------- */
   ['recipeText','origD','origH','origL','origW','origH2','tgtD','tgtH','tgtL','tgtW','tgtH2',
    'servOrig','servTgt','bakeTime','bakeTemp'].forEach(id => $(id).addEventListener('input', recompute));
 
-  $('lockAdd').addEventListener('click', () => addLock($('lockInput').value));
-  $('lockInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addLock($('lockInput').value); } });
+  $('exampleSelect').addEventListener('change', e => applyExample(e.target.value));
+
+  $('pantryAdd').addEventListener('click', () => addPantry($('pantryName').value, $('pantryAmount').value, $('pantryUnit').value));
+  $('pantryName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPantry($('pantryName').value, $('pantryAmount').value, $('pantryUnit').value); } });
+  $('pantryAmount').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPantry($('pantryName').value, $('pantryAmount').value, $('pantryUnit').value); } });
+
+  $('saveBtn').addEventListener('click', saveRecipe);
+  $('saveConfirm').addEventListener('click', confirmSave);
+  $('saveCancel').addEventListener('click', () => $('saveRow').classList.add('hidden'));
+  $('saveName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); confirmSave(); } });
+  $('exportBtn').addEventListener('click', () => {
+    const t = $('exportBtn').textContent.trim();
+    if (t.includes('.json')) { exportJson(); } else { exportRecipe(); }
+    $('exportBtn').textContent = t.includes('.json') ? '📤 Esporta' : '📤 Esporta .json';
+    clearTimeout($('exportBtn')._t); $('exportBtn')._t = setTimeout(() => { $('exportBtn').textContent = '📤 Esporta'; }, 2200);
+  });
+  $('shareBtn').addEventListener('click', shareLink);
 
   $('handsBtn').addEventListener('click', openHands);
   $('handsBtn2').addEventListener('click', openHands);
   $('hfClose').addEventListener('click', closeHands);
   $('hfPrev').addEventListener('click', () => hfStep(-1));
   $('hfNext').addEventListener('click', () => hfStep(1));
+  $('hfMic').addEventListener('click', toggleMic);
+  $('hfSpeaker').addEventListener('click', toggleSpeaker);
+
   window.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !$('handsOverlay').classList.contains('hidden')) closeHands();
+    if (e.key === 'Escape') {
+      if (!$('handsOverlay').classList.contains('hidden')) closeHands();
+      else if (!$('tourOverlay').classList.contains('hidden')) endTour(false);
+    }
     if (!$('handsOverlay').classList.contains('hidden')) {
       if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); hfStep(1); }
       if (e.key === 'ArrowLeft') { e.preventDefault(); hfStep(-1); }
     }
   });
 
-  // Tap sull'area centrale → avanti (mani sporche)
-  $('handsOverlay').addEventListener('click', e => {
-    if (!e.target.closest('button')) hfStep(1);
-  });
+  $('handsOverlay').addEventListener('click', e => { if (!e.target.closest('button')) hfStep(1); });
+
+  $('tourBtn').addEventListener('click', startTour);
+  $('tourSkip').addEventListener('click', () => endTour(true));
+  $('tourNext').addEventListener('click', () => { if (tourIndex === TOUR_STEPS.length - 1) endTour(true); else { tourIndex++; renderTourStep(); } });
+  $('tourPrev').addEventListener('click', () => { if (tourIndex > 0) { tourIndex--; renderTourStep(); } });
+  window.addEventListener('resize', () => { if (!$('tourOverlay').classList.contains('hidden')) renderTourStep(); });
+  window.addEventListener('scroll', () => { if (!$('tourOverlay').classList.contains('hidden')) renderTourStep(); }, { passive: true });
 
   bindShapeToggles();
-
-  // Miglioria mobile: tastiera numerica sui campi numerici
   document.querySelectorAll('input[type="number"]').forEach(i => i.setAttribute('inputmode', 'decimal'));
 
-  // Ripristina lo stato salvato (ricetta, teglie, porzioni, blocchi) e ricalcola
-  restore();
+  /* ---------- INIT ---------- */
+  readShare();
+  const restored = restore();
   syncShapeUI();
-  renderLocks();
+  renderPantry();
+  renderRulesUI();
+  renderSaved();
   recompute();
+  if (!restored) {
+    let done = false;
+    try { done = !!localStorage.getItem('pk-tour-done'); } catch (e) {}
+    if (!done) setTimeout(startTour, 600);
+  }
+
+  // Esposto per QA/debug (non usato dall'app)
+  window.__pkTest = { parseVoiceCommand, scaleEggs, maxFactorFor, scaledAmount, parseIngredientLine };
 })();
 </script>
 </body>
