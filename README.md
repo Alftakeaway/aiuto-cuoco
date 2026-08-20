@@ -62,7 +62,7 @@ L'interfaccia riduce l'affaticamento visivo in cucina (ambienti ad alta luminosi
 
 ## Modulo 2 — Logica Matematica e Fisico-Chimica delle Grammature
 
-Tutto il motore è implementato in `index.html` (sezione `<script>`). Le formule chiave:
+Tutto il motore è in `js/engine.js` (logica pura, senza DOM) e `js/data.js` (dati statici). Le formule chiave:
 
 ### 2.1 Geometria dei Contenitori (Volume Effective Multiplier)
 
@@ -193,7 +193,17 @@ Schema rigoroso che mappa la ricetta con metadati geometrici, flag di non-scalab
 
 ## Modulo 4 — Prototipo Interattivo Completo
 
-**Single File Component:** tutto il prototipo (HTML5 + Tailwind CSS via CDN + JavaScript nativo) è in **`index.html`**, autonomo e deployabile come static site.
+**Architettura multi-file** (HTML + CSS + JS separati per ordine e scalabilità):
+
+| File | Contenuto |
+|---|---|
+| `index.html` | Solo markup: header, 3 colonne, overlay Hands-Free, tour, toast, footer |
+| `css/styles.css` | Design system (palette `:root`, classi base, Hands-Free, tour) |
+| `js/data.js` | Dati statici: `UNIT_MAP`, conversioni tazze/cucchiai, esempi, tour, numeri vocali |
+| `js/engine.js` | Motore puro (niente DOM): parser, geometria, formule non lineari, fattori, cottura, voce |
+| `js/app.js` | UI, stato, eventi, dispensa, regole, Hands-Free, salvataggio, tour + `window.__pkTest` |
+
+I moduli condividono il namespace `window.PK` e vengono caricati come script classici in ordine (`data.js` → `engine.js` → `app.js`), così l'app resta fruibile anche aprendo `index.html` direttamente da `file://` (nessun modulo ES → niente problemi CORS). Il motore puro è testabile in isolamento via `window.PK.*`.
 
 Include:
 - Input dimensioni teglia di partenza (tonda `22cm` ↔ rettangolare `30×20cm`) e teglia di arrivo;
@@ -253,6 +263,12 @@ vercel --prod
 ---
 
 ## Changelog
+
+### v3 — Refactor multi-file (ordine & scalabilità)
+- **Separazione HTML / CSS / JS:** `index.html` contiene solo markup; `css/styles.css` il design system; `js/data.js` i dati statici; `js/engine.js` il motore puro (parser, geometria, formule non lineari, fattori, conversioni, cottura, parser vocale); `js/app.js` UI/stato/eventi/salvataggio/tour.
+- **Namespace condiviso `window.PK`** con script classici (niente moduli ES): compatibilità totale con `file://` per il QA headless e per l'apertura locale.
+- **Testabilità:** `window.__pkTest` continua a esporre `parseVoiceCommand`, `scaleEggs`, `maxFactorFor`, `scaledAmount`, `parseIngredientLine`; il motore puro è richiamabile anche direttamente da `window.PK.*`.
+- **QA invariato:** tutte le suite (30+12+18 unit/functional) passano senza regressioni dopo lo split.
 
 ### v1.1 — correzione sovrapposizioni & migliorie
 - **Bug `<details>`:** la regola author `.slider-row { display:flex }` sovrascriveva la regola UA `details:not([open]) > * { display:none }`, mostrando il contenuto anche a pannello chiuso e sovrapponendolo al pulsante "Modalità Mani Sporche". Risolto con `details:not([open]) > *:not(summary) { display: none !important; }`.
